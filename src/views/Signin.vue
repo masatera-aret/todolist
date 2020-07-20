@@ -1,48 +1,46 @@
 <template>
-  <div class="register">
-    <div class="register-box">
-      <div class="register-input-wrap">
+  <div class="signin">
+    <main class="signin-box">
+      <div class="signin-input-wrap">
         userID
         <input type="text" />
         password
         <input type="text" />
-        <button class="register-btn">signin</button>
+        <button class="signin-btn">signin</button>
       </div>
       <router-link :to="{name: 'Login'}">Login</router-link>
-    </div>
+    </main>
   </div>
 </template>
 
 <script>
 export default {
-  methods: {
-    toRegister() {
-      this.$router.push({name: 'Register'})
-    }
-  }
 }
 </script>
 
 <style lang="scss" scoped>
 
-.register {
+.signin {
+  width: 100%;
   min-height: 100vh;
-  display:flex;
-  align-items: center;
+  display:grid;
+  grid-template:
+  ".... .... ...."
+  ".... main ...." 400px
+  ".... .... ...."
+  /auto 300px auto;
 }
 
-.register-box {
-  width: 300px;
-  height: 400px;
+.signin-box {
+  grid-area: main;
   padding: 20px;
-  margin:auto;
   border: 1px solid rgb(108, 108, 108);
 
-  .register-input-wrap {
+  .signin-input-wrap {
     display: flex;
     flex-direction: column;
 
-    .register-btn {
+    .signin-btn {
       margin-top: 20px;
     }
   }

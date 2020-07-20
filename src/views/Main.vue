@@ -1,16 +1,16 @@
 <template>
   <div class="main">
-    <div class="enter-bar">
+    <header class="enter-bar">
       <input v-model="v_todo" type="text">
       <button @click="setToDo">enter</button>
-    </div>
-    <div class="todos-wrap">
+    </header>
+    <main class="todos-wrap">
       <ul>
         <li v-for="todo in this.todosArray" :key="todo.id">
-          {{ todo }}
+          <span>{{ todo }}</span>
         </li>
       </ul>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -73,12 +73,31 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.main {
+  min-height: 100vh;
+  display: grid;
+  grid-template:
+    "header" 60px
+    "......" 20px
+    "main  " 1fr
+    /100%;
+}
 .enter-bar {
-  width: 100%;
-  height: 60px;
+  grid-area: header;
   background-color:aqua;
 }
 .todos-wrap {
+  grid-area: main;
+  padding: 10px;
   background-color: greenyellow;
+  > ul {
+    list-style:none;
+    > li {
+      margin-top: 5px;
+      > span {
+        cursor:pointer;
+      }
+    }
+  }
 }
 </style>

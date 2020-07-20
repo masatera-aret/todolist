@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Login from '../views/Login.vue'
-import Register from '../views/Register.vue'
+import Signin from '../views/Signin.vue'
 
 Vue.use(VueRouter)
 
@@ -12,9 +12,9 @@ Vue.use(VueRouter)
     component: Login
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: Register
+    path: '/signin',
+    name: 'Signin',
+    component: Signin
   },
   {
     path: '/main',

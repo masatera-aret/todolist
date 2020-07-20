@@ -1,6 +1,6 @@
 <template>
   <div class="login">
-    <div class="login-box">
+    <main class="login-box">
       <div class="login-input-wrap">
         userID
         <input type="text" />
@@ -8,8 +8,8 @@
         <input type="text" />
         <button class="login-btn">login</button>
       </div>
-      <router-link :to="{name: 'Register'}">signin</router-link>
-    </div>
+      <router-link :to="{name: 'Signin'}">signin</router-link>
+    </main>
   </div>
 </template>
 
@@ -21,16 +21,19 @@ export default {
 <style lang="scss" scoped>
 
 .login {
+  width: 100%;
   min-height: 100vh;
-  display:flex;
-  align-items: center;
+  display:grid;
+  grid-template:
+  ".... .... ...."
+  ".... main ...." 400px
+  ".... .... ...."
+  /auto 300px auto;
 }
 
 .login-box {
-  width: 300px;
-  height: 400px;
+  grid-area: main;
   padding: 20px;
-  margin:auto;
   border: 1px solid rgb(108, 108, 108);
 
   .login-input-wrap {
