@@ -1,19 +1,49 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+  <div id="app" class="container">
+    <div class="login-box">
+      <div class="login-input-wrap">
+        userID
+        <input type="text" />
+        password
+        <input type="text" />
+        <button class="login-btn">login</button>
+      </div>
     </div>
-    <router-view/>
   </div>
 </template>
 
+<style lang="scss" scoped>
+
+#app {
+  display:flex;
+  align-items: center;
+}
+
+.login-box {
+  width: 300px;
+  height: 400px;
+  padding: 20px;
+  margin:auto;
+  border: 1px solid rgb(108, 108, 108);
+
+  .login-input-wrap {
+    display: flex;
+    flex-direction: column;
+
+    .login-btn {
+      margin-top: 20px;
+    }
+  }
+}
+
+</style>
+
 <style lang="scss">
 #app {
+  min-height: 100vh;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
 }
 
