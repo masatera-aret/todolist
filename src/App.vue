@@ -1,42 +1,8 @@
 <template>
   <div id="app" class="container">
-    <div class="login-box">
-      <div class="login-input-wrap">
-        userID
-        <input type="text" />
-        password
-        <input type="text" />
-        <button class="login-btn">login</button>
-      </div>
-    </div>
+    <router-view/>
   </div>
 </template>
-
-<style lang="scss" scoped>
-
-#app {
-  display:flex;
-  align-items: center;
-}
-
-.login-box {
-  width: 300px;
-  height: 400px;
-  padding: 20px;
-  margin:auto;
-  border: 1px solid rgb(108, 108, 108);
-
-  .login-input-wrap {
-    display: flex;
-    flex-direction: column;
-
-    .login-btn {
-      margin-top: 20px;
-    }
-  }
-}
-
-</style>
 
 <style lang="scss">
 #app {
