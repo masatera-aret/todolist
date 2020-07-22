@@ -5,9 +5,9 @@
       <button @click="setToDo">enter</button>
     </header>
     <main class="todos-wrap">
-      <ul>
-        <li v-for="todo in this.todosArray" :key="todo.id">
-          <span>{{ todo }}</span>
+      <ul class="p-0">
+        <li v-for="(todo, index) in this.todosArray" :key="todo.id" @mouseover="showUpTrashbox(index)" @mouseleave="hideTrashbox(index)">
+          <span>{{ todo }}</span><div v-show="isTrashbox && index === trashboxIndex" class="trashbox">ゴミ箱</div>
         </li>
       </ul>
     </main>
@@ -22,12 +22,22 @@ import 'firebase/firestore'
 export default {
   data() {
     return {
+      isTrashbox: false,
+      trashboxIndex: "",
       db: firebase.firestore(),
       v_todo: "",
       todosArray: []
     }
   },
   methods: {
+    showUpTrashbox(index) {
+      this.isTrashbox = true
+      this.trashboxIndex = index
+    },
+    hideTrashbox(index) {
+      this.isTrashbox = false
+      this.trashboxIndex = index
+    },
     //firestoreへdataを追加 idを別コレクションから取得してそのidをtodoのidに追加
     setToDo() {
       this.db.collection('ID').doc("textIdCounter")
@@ -84,20 +94,40 @@ export default {
 }
 .enter-bar {
   grid-area: header;
-  background-color:aqua;
+  // background-color:aqua;
 }
 .todos-wrap {
   grid-area: main;
   padding: 10px;
-  background-color: greenyellow;
+  // background-color: greenyellow;
   > ul {
     list-style:none;
     > li {
-      margin-top: 5px;
-      > span {
+      margin-top: 10px;
+      position: relative;
+      &:hover {
+        >span::after {
+          content:"";
+          position: absolute;
+          left:0;
+          bottom:0;
+          width:100%;
+          height:2px;
+          background-color:rgb(191, 191, 191);
+        }
+      }
+      >span {
         cursor:pointer;
       }
     }
   }
 }
+
+.trashbox {
+  position: absolute;
+  top:0;
+  right: 0;
+  cursor:pointer;
+}
+
 </style>
