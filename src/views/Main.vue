@@ -59,7 +59,8 @@ export default {
         this.db.collection('todo_list').doc()
         .set({
           id: id,
-          todo: this.v_todo
+          todo: this.v_todo,
+          user: this.$store.state.userInfo.email
         })
         this.db.collection('ID').doc("textIdCounter")
         .set({
@@ -71,7 +72,6 @@ export default {
     logout() {
       this.firebase.auth().signOut()
       .then(() => {
-        this.$store.commit("setUserInfo", null)
         console.log("ログアウトしました")
       })
       .catch(err => {
@@ -80,41 +80,35 @@ export default {
     },
     setUserInfo(userInfo) {
       this.$store.commit("setUserInfo", userInfo);
-    }
+    },
   },
   created() {
-    //firestoreからdataを取得 & onSnapshotで監視
-    this.db.collection('todo_list').orderBy("id", "desc")
-    .onSnapshot(snapshot => {
-      const source = snapshot.metadata.hasPendingWrites ? "Local" : "server"
-      if(source == "Local") {
-        snapshot.forEach(doc => {
-          let docSource = doc.metadata.hasPendingWrites ? "Local" : "server"
-          if(docSource == "Local") {
-            this.todosArray.unshift(doc.data().todo)
-          }
-        })
-      }else if(source == "server") {
-        this.todosArray = []
-        snapshot.forEach(doc => {
-          this.todosArray.push(doc.data().todo)
-        })
-      }
-    });
     this.firebase.auth().onAuthStateChanged(user => {
       if(user) {
-        // console.log("user.email",user.email);
-        // console.log("user.emailVerified",user.emailVerified);
-        // console.log("user.isAnonymous",user.isAnonymous);
-        // console.log("user.uid",user.uid);
-        // console.log("user.providerData",user.providerData);
         this.setUserInfo(user)
-        this.isUser = true;
+        this.isUser = true
+        this.db.collection('todo_list').where("user","==", user.email).orderBy("id", "desc")
+        .onSnapshot(snapshot => {
+          const source = snapshot.metadata.hasPendingWrites ? "Local" : "server"
+          if(source == "Local") {
+            snapshot.forEach(doc => {
+              let docSource = doc.metadata.hasPendingWrites ? "Local" : "server"
+              if(docSource == "Local") {
+                this.todosArray.unshift(doc.data().todo)
+              }
+            })
+          }else if(source == "server") {
+            this.todosArray = []
+            snapshot.forEach(doc => {
+              this.todosArray.push(doc.data().todo)
+            })
+          }
+        });
       }else {
         this.isUser = false;
-        this.$router.push({name:"Login"});
       }
-    })
+    });
+    //firestoreからdataを取得 & onSnapshotで監視
   }
 }
 </script>

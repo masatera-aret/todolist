@@ -27,10 +27,6 @@ export default {
       return this.$store.state.firebase
     }
   },
-  // beforeRouteEnter(to, from, next) {
-  //   next(vm => {
-  //   })
-  // },
   methods: {
     toLogin() {
       this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
@@ -43,8 +39,6 @@ export default {
       this.email = ""
       this.password = ""
     }
-  },
-  created() {
   }
 }
 </script>
@@ -57,9 +51,9 @@ export default {
   display:grid;
   grid-template:
   ".... .... ...."
-  ".... main ...." 400px
+  ".... main ...." 450px
   ".... .... ...."
-  /auto 300px auto;
+  /auto 350px auto;
 }
 
 .login-box {

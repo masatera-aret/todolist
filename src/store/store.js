@@ -1,9 +1,10 @@
-import Vue from 'vue';
-import Vuex from 'vuex';
+import Vue from 'vue'
+import Vuex from 'vuex'
 import firebase from 'firebase/app'
 import 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
+import router from '../router/router'
 
 Vue.use(Vuex)
 
@@ -18,18 +19,30 @@ const firebaseConfig = {
   measurementId: "G-RLCYKBXHFP"
 };
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig)
 
 
 export default new Vuex.Store({
   state: {
     firebase: firebase,
     db: firebase.firestore(),
-    userInfo: false
+    userInfo: true
   },
   mutations: {
     setUserInfo(state, userInfo) {
       state.userInfo = userInfo
+    }
+  },
+  actions: {
+    isUserCheckFunc(context) {
+      firebase.auth().onAuthStateChanged(user => {
+        if(user) {
+          context.commit("setUserInfo",user)
+          router.push({name:"Main"});
+        }else {
+          console.log("user情報なし")
+        }
+      })
     }
   }
 })

@@ -54,9 +54,9 @@ export default {
   display:grid;
   grid-template:
   ".... .... ...."
-  ".... main ...." 400px
+  ".... main ...." 450px
   ".... .... ...."
-  /auto 300px auto;
+  /auto 350px auto;
 }
 
 .signin-box {
