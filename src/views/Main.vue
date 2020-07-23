@@ -3,11 +3,13 @@
     <header class="enter-bar">
       <input v-model="v_todo" type="text">
       <button @click="setToDo">enter</button>
+      <button v-if="isUser" @click="logout">logout</button>
+      <p>{{getUserData.email}}さんのページ</p>
     </header>
     <main class="todos-wrap">
       <ul class="p-0">
         <li v-for="(todo, index) in this.todosArray" :key="todo.id" @mouseover="showUpTrashbox(index)" @mouseleave="hideTrashbox(index)">
-          <span>{{ todo }}</span><div v-show="isTrashbox && index === trashboxIndex" class="trashbox">ゴミ箱</div>
+          <span>{{ todo }}</span><div v-show="showTrashbox && index === trashboxIndex" class="trashbox">ゴミ箱</div>
         </li>
       </ul>
     </main>
@@ -15,27 +17,35 @@
 </template>
 
 <script>
-import firebase from 'firebase/app'
-import 'firebase/app'
-import 'firebase/firestore'
 
 export default {
   data() {
     return {
-      isTrashbox: false,
+      showTrashbox: false,
       trashboxIndex: "",
-      db: firebase.firestore(),
       v_todo: "",
-      todosArray: []
+      todosArray: [],
+      isUser: false
+    }
+  },
+  computed: {
+    db() {
+      return this.$store.state.db
+    },
+    firebase() {
+      return this.$store.state.firebase
+    },
+    getUserData() {
+      return this.$store.state.userInfo
     }
   },
   methods: {
     showUpTrashbox(index) {
-      this.isTrashbox = true
+      this.showTrashbox = true
       this.trashboxIndex = index
     },
     hideTrashbox(index) {
-      this.isTrashbox = false
+      this.showTrashbox = false
       this.trashboxIndex = index
     },
     //firestoreへdataを追加 idを別コレクションから取得してそのidをtodoのidに追加
@@ -58,6 +68,19 @@ export default {
         this.v_todo = ""
       })
     },
+    logout() {
+      this.firebase.auth().signOut()
+      .then(() => {
+        this.$store.commit("setUserInfo", null)
+        console.log("ログアウトしました")
+      })
+      .catch(err => {
+        console.log("catch any error by sign out:", err)
+      })
+    },
+    setUserInfo(userInfo) {
+      this.$store.commit("setUserInfo", userInfo);
+    }
   },
   created() {
     //firestoreからdataを取得 & onSnapshotで監視
@@ -77,6 +100,20 @@ export default {
           this.todosArray.push(doc.data().todo)
         })
       }
+    });
+    this.firebase.auth().onAuthStateChanged(user => {
+      if(user) {
+        // console.log("user.email",user.email);
+        // console.log("user.emailVerified",user.emailVerified);
+        // console.log("user.isAnonymous",user.isAnonymous);
+        // console.log("user.uid",user.uid);
+        // console.log("user.providerData",user.providerData);
+        this.setUserInfo(user)
+        this.isUser = true;
+      }else {
+        this.isUser = false;
+        this.$router.push({name:"Login"});
+      }
     })
   }
 }
@@ -87,10 +124,10 @@ export default {
   min-height: 100vh;
   display: grid;
   grid-template:
-    "header" 60px
-    "......" 20px
-    "main  " 1fr
-    /100%;
+    ".... header ...." 60px
+    ".... ....   ...." 20px
+    ".... main   ...." 1fr
+    /200px 1fr 200px;
 }
 .enter-bar {
   grid-area: header;
@@ -105,15 +142,19 @@ export default {
     > li {
       margin-top: 10px;
       position: relative;
+      >span::after {
+        content:"";
+        position: absolute;
+        left:0;
+        bottom:0;
+        width:0%;
+        height:1px;
+        background-color:rgb(226, 226, 226);
+        transition: 0.5s;
+      }
       &:hover {
         >span::after {
-          content:"";
-          position: absolute;
-          left:0;
-          bottom:0;
           width:100%;
-          height:2px;
-          background-color:rgb(191, 191, 191);
         }
       }
       >span {

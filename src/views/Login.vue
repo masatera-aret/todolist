@@ -2,11 +2,12 @@
   <div class="login">
     <main class="login-box">
       <div class="login-input-wrap">
-        userID
-        <input type="text" />
+        <h2 class="text-center">Login</h2>
+        Email
+        <input v-model="email" type="email" />
         password
-        <input type="text" />
-        <button class="login-btn">login</button>
+        <input v-model="password" type="password" />
+        <button @click="toLogin" class="login-btn">login</button>
       </div>
       <router-link :to="{name: 'Signin'}">signin</router-link>
     </main>
@@ -15,6 +16,36 @@
 
 <script>
 export default {
+  data() {
+    return {
+      email: "",
+      password: ""
+    }
+  },
+  computed: {
+    firebase() {
+      return this.$store.state.firebase
+    }
+  },
+  // beforeRouteEnter(to, from, next) {
+  //   next(vm => {
+  //   })
+  // },
+  methods: {
+    toLogin() {
+      this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
+      .then(() => {
+        this.$router.push({name:"Main"})
+      })
+      .catch(err => {
+        console.log("has error from to do Login:", err)
+      })
+      this.email = ""
+      this.password = ""
+    }
+  },
+  created() {
+  }
 }
 </script>
 
