@@ -1,13 +1,17 @@
 <template>
-  <div class="signin">
-    <main class="signin-box">
-      <div class="signin-input-wrap">
+  <div class="account">
+    <main class="account-box">
+      <div class="account-parts-wrapp">
         <h2 class="text-center">Signin</h2>
-        Email
-        <input v-model="email" type="email" />
-        password
-        <input v-model="password" type="password" />
-        <button @click="toSignin" class="signin-btn">signin</button>
+        <div class="account-input-wrapp">
+          <input v-model="email" @focus="inFocus" @blur="outFocus" type="email" />
+          <span data-placeholder="Email"></span>
+        </div>
+        <div class="account-input-wrapp">
+          <input v-model="password" @focus="inFocus" @blur="outFocus" type="password" />
+          <span data-placeholder="password"></span>
+        </div>
+        <button class="submit_btn" :class="inputCheck" @click="toSignin">signin</button>
       </div>
       <router-link :to="{name: 'Login'}">Login</router-link>
     </main>
@@ -19,7 +23,8 @@ export default {
   data() {
     return {
       email: "",
-      password: ""
+      password: "",
+      emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/,
     }
   },
   computed: {
@@ -28,6 +33,13 @@ export default {
     },
     firebase() {
       return this.$store.state.firebase
+    },
+    inputCheck() {
+      if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
+        return {btnClickPermission: true}
+      }else {
+        return {btnClickPermission: false}
+      }
     }
   },
   methods: {
@@ -41,37 +53,23 @@ export default {
       })
       this.email = ""
       this.password = ""
+    },
+    inFocus(ev) {
+      ev.target.classList.add("inFocus")
+    },
+    outFocus(ev) {
+      if(ev.target.value == "") {
+        ev.target.classList.remove("inFocus")
+        ev.target.classList.remove("outFocus")
+      }else {
+        ev.target.classList.add("outFocus")
+      }
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-
-.signin {
-  width: 100%;
-  min-height: 100vh;
-  display:grid;
-  grid-template:
-  ".... .... ...."
-  ".... main ...." 450px
-  ".... .... ...."
-  /auto 350px auto;
-}
-
-.signin-box {
-  grid-area: main;
-  padding: 20px;
-  border: 1px solid rgb(108, 108, 108);
-
-  .signin-input-wrap {
-    display: flex;
-    flex-direction: column;
-
-    .signin-btn {
-      margin-top: 20px;
-    }
-  }
-}
+// Login.vueに、同じ内容のstyleが適応されている。
 
 </style>

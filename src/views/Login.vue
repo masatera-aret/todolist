@@ -1,20 +1,19 @@
 <template>
-  <div class="login">
-    <main class="login-box">
-      <div class="login-wrapp">
+  <div class="account">
+    <main class="account-box">
+      <div class="account-parts-wrapp">
         <h2 class="text-center">Login</h2>
-        <div class="input-wrapp">
+        <div class="account-input-wrapp">
           <input v-model="email" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
         </div>
-        <div class="input-wrapp">
+        <div class="account-input-wrapp">
           <input v-model="password" @focus="inFocus" @blur="outFocus" type="password" />
           <span data-placeholder="password"></span>
         </div>
-        <button class="login_btn" :class="inputCheck" @click="toLogin">login</button>
+        <button class="submit_btn" :class="inputCheck" @click="toLogin">login</button>
       </div>
       <router-link :to="{name: 'Signin'}">signin</router-link>
-      <p>{{inputCheck.btnClickPermission}}</p>
     </main>
   </div>
 </template>
@@ -25,6 +24,7 @@ export default {
     return {
       email: "",
       password: "",
+      emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/
     }
   },
   computed: {
@@ -32,7 +32,7 @@ export default {
       return this.$store.state.firebase
     },
     inputCheck() {
-      if(this.email != "" && this.password.length >= 6) {
+      if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
         return {btnClickPermission: true}
       }else {
         return {btnClickPermission: false}
@@ -66,9 +66,9 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 
-.login {
+.account {
   width: 100%;
   min-height: 100vh;
   display:grid;
@@ -79,16 +79,16 @@ export default {
   /auto 350px auto;
 }
 
-.login-box {
+.account-box {
   grid-area: main;
   padding: 20px;
   border: 1px solid rgb(108, 108, 108);
 
-  .login-wrapp {
+  .account-parts-wrapp {
     display: flex;
     flex-direction: column;
 
-    .input-wrapp {
+    .account-input-wrapp {
       margin-top:25px;
       position:relative;
       border-bottom: 1px solid #adadad;
@@ -111,7 +111,6 @@ export default {
         width:0%;
         height:1px;
         background-color:#6c5ce7;
-        // background-image: linear-gradient(145deg, #6c5ce7, #e84393);
         transition: 0.5s;
       }
     }
@@ -139,17 +138,19 @@ export default {
       background: none;
     }
 
-    .login_btn {
+    .submit_btn {
       color: white;
       height: 35px;
       margin-top: 35px;
       background-color: rgb(220, 220, 220);
       border: none;
       pointer-events: none;
+      transition: 0.5s;
     }
     .btnClickPermission {
-      background-color: rgb(145, 145, 145);
       pointer-events: auto;
+      background-color: rgb(145, 145, 145);
+      transition: 0.5s;
     }
   }
 }
