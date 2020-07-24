@@ -26,11 +26,15 @@ export default new Vuex.Store({
   state: {
     firebase: firebase,
     db: firebase.firestore(),
-    userInfo: true
+    userInfo: true,
+    isLoading: true
   },
   mutations: {
     setUserInfo(state, userInfo) {
       state.userInfo = userInfo
+    },
+    setIsLoading(state, bool) {
+      state.isLoading = bool
     }
   },
   actions: {

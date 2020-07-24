@@ -1,7 +1,7 @@
 <template>
   <div class="main">
     <header class="enter-bar">
-      <input v-model="v_todo" type="text">
+      <input v-model="v_todo" type="text" value="">
       <button @click="setToDo">enter</button>
       <button v-if="isUser" @click="logout">logout</button>
       <p>{{getUserData.email}}さんのページ</p>
@@ -19,6 +19,7 @@
 <script>
 
 export default {
+
   data() {
     return {
       showTrashbox: false,
@@ -37,7 +38,7 @@ export default {
     },
     getUserData() {
       return this.$store.state.userInfo
-    }
+    },
   },
   methods: {
     showUpTrashbox(index) {
@@ -82,6 +83,9 @@ export default {
       this.$store.commit("setUserInfo", userInfo);
     },
   },
+  beforeCreate() {
+    this.$store.commit('setIsLoading',true)
+  },
   created() {
     this.firebase.auth().onAuthStateChanged(user => {
       if(user) {
@@ -108,7 +112,11 @@ export default {
         this.isUser = false;
       }
     });
-    //firestoreからdataを取得 & onSnapshotで監視
+  },
+  mounted() {
+    setTimeout(() => {
+      this.$store.commit('setIsLoading',false)
+    }, 1000);
   }
 }
 </script>
