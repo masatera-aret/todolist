@@ -4,14 +4,19 @@
       <div class="account-parts-wrapp">
         <h2 class="text-center">Login</h2>
         <div class="account-input-wrapp">
-          <input v-model="email" @focus="inFocus" @blur="outFocus" type="email" />
+          <input v-model="email" :class="isEmail" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
         </div>
         <div class="account-input-wrapp">
-          <input v-model="password" @focus="inFocus" @blur="outFocus" type="password" />
+          <input v-model="password" :class="isPass" @focus="inFocus" @blur="outFocus" type="password" />
           <span data-placeholder="password"></span>
         </div>
-        <button class="submit_btn" :class="inputCheck" @click="toLogin">login</button>
+        <button class="login-btn" :class="inputCheck" @click="toLogin">login</button>
+        <!-- <button @click="toLoginByGoogle">googleでログインだ！</button> -->
+        <button class="login-by-google" @click="toLoginByGoogle">
+          <img src="https://img.icons8.com/color/48/000000/google-logo.png"/>
+          <span>Login with Google</span>
+        </button>
       </div>
       <router-link :to="{name: 'Signin'}">signin</router-link>
     </main>
@@ -19,17 +24,22 @@
 </template>
 
 <script>
+// import { mapGetters } from 'vuex'
+
 export default {
   data() {
     return {
-      email: "",
-      password: "",
-      emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/
+      email: "terakado@terakado.jp",
+      password: "terakado",
+      emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/,
     }
   },
   computed: {
     firebase() {
-      return this.$store.state.firebase
+      return this.$store.getters.firebase
+    },
+    providerGoogle() {
+      return this.$store.state.providerGoogle
     },
     inputCheck() {
       if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
@@ -37,19 +47,42 @@ export default {
       }else {
         return {btnClickPermission: false}
       }
+    },
+    isEmail() {
+      if(this.email != "") {
+        return {inFocus: true, outFocus: true}
+      }else {
+        return {inFocus: true, outFocus: false}
+      }
+    },
+    isPass() {
+      if(this.password != "") {
+        return {inFocus: true, outFocus: true}
+      }else {
+        return {inFocus: true, outFocus: false}
+      }
     }
   },
   methods: {
     toLogin() {
+      this.$store.commit("setIsLoading", true)
       this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
       .then(() => {
+        this.email = ""
+        this.password = ""
         this.$router.push({name:"Main"})
       })
       .catch(err => {
+        this.$store.commit("setIsLoading", false)
         console.log("has error from to do Login:", err)
       })
-      this.email = ""
-      this.password = ""
+    },
+    toLoginByGoogle() {
+      this.firebase.auth().signInWithPopup(this.providerGoogle)
+        .then(result => {
+          console.log("accessToken", result.credential.accessToken)
+          console.log("user", result.user)
+        })
     },
     inFocus(ev) {
       ev.target.classList.add("inFocus")
@@ -138,13 +171,14 @@ export default {
       background: none;
     }
 
-    .submit_btn {
+    .login-btn {
       color: white;
-      height: 35px;
+      height: 30px;
       margin-top: 35px;
       background-color: rgb(220, 220, 220);
       border: none;
       pointer-events: none;
+      user-select: none;
       transition: 0.5s;
     }
     .btnClickPermission {
@@ -152,6 +186,25 @@ export default {
       background-color: rgb(145, 145, 145);
       transition: 0.5s;
     }
+  }
+}
+
+
+.login-by-google {
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial;
+  font-size:15px;
+  // font-weight:200;
+  margin-top: 10px;
+  height:25px;
+  // background-color:#FF3E00;
+  border:none;
+  color:rgb(143, 143, 143);
+  > img {
+    margin:0 15px;
+    width:20px;
   }
 }
 

@@ -27,7 +27,13 @@ export default new Vuex.Store({
     firebase: firebase,
     db: firebase.firestore(),
     userInfo: true,
-    isLoading: true
+    isLoading: true,
+    providerGoogle: new firebase.auth.GoogleAuthProvider()
+  },
+  getters: {
+    firebase: state => state.firebase,
+    providerGoogle: state => state.providerGoogle,
+    isLoading: state => state.isLoading,
   },
   mutations: {
     setUserInfo(state, userInfo) {

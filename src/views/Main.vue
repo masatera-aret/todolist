@@ -5,21 +5,8 @@
         <div class="input-wrap">
           <input v-model="v_todo" type="text" value placeholder="ToDoを入力してください" />
           <span></span>
-          <button class="enter-btn" @click="setToDo">
-            <svg
-              viewBox="0 0 16 16"
-              class="bi bi-pencil-square"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456l-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"
-              />
-              <path
-                fill-rule="evenodd"
-                d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"
-              />
-            </svg>
+          <button class="add-btn" @click="setToDo">
+            add
           </button>
         </div>
         <button class="logout-btn" v-if="isUser" @click="logout">logout</button>
@@ -27,17 +14,29 @@
       <p>{{getUserData.email}}さんのToDoListです</p>
     </header>
     <main class="todos-wrap">
-      <ul class="p-0">
+      <transition-group name="fade" tag="ul" class="p-0">
         <li
-          v-for="(todo, index) in this.todosArray"
+          class="todo"
+          v-for="(todo, index) in this.getTodosArray"
           :key="todo.id"
-          @mouseover="showUpTrashbox(index)"
-          @mouseleave="hideTrashbox(index)"
         >
-          <span>{{ todo }}</span>
-          <div v-show="showTrashbox && index === trashboxIndex" class="trashbox">ゴミ箱</div>
+          <div class="dumy"
+            @mouseover="showUpTrashbox(index)"
+            @mouseleave="hideTrashbox(index)"
+          >
+            <span v-if="todo.done == true" @click="doneIt(index,arguments[0])" class="done" :data-textid="todo.id">{{ todo.todo }}</span>
+            <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">{{ todo.todo }}</span>
+            <div
+              v-show="showTrashbox && index === trashboxIndex"
+              @click="deleteData(index)"
+              class="trashbox"
+              :data-textid="todo.id"
+            >
+              <i class="fas fa-trash-alt"></i>
+            </div>
+          </div>
         </li>
-      </ul>
+      </transition-group>
     </main>
   </div>
 </template>
@@ -47,13 +46,12 @@ export default {
   data() {
     return {
       showTrashbox: false,
+      trashDelete: true,
       trashboxIndex: "",
       v_todo: "",
       todosArray: [],
       isUser: false,
-      showBorder: {
-        inFocus: false,
-      },
+      showBorder: {inFocus: false},
     };
   },
   computed: {
@@ -66,8 +64,50 @@ export default {
     getUserData() {
       return this.$store.state.userInfo;
     },
+    getTodosArray() {
+      return this.todosArray
+    }
   },
   methods: {
+    doneIt(index,ev) {
+      this.db
+          .collection("todo_list").where("id", "==", this.todosArray[index].id).get()
+          .then(snapshot => {
+            snapshot.forEach(doc => {
+              this.db.collection("todo_list").doc(doc.id).update({
+                done: !doc.data().done
+              })
+              .catch(err => {
+                console.log("update error:", err)
+              })
+            })
+          })
+          .catch(err => {
+            console.log("get error:",err)
+          })
+      ev.target.classList.toggle("done")
+    },
+    deleteData(index) {
+      this.showTrashbox = false
+      // this.trashboxIndex = index
+      // console.log(this.todosArray[index].id)
+      // this.todosArray.splice(index,1)
+      this.db.collection("todo_list").where("id","==",this.todosArray[index].id).get()
+        .then( (data) => {
+          data.forEach(text => {
+            this.db.collection("todo_list").doc(text.id).delete()
+              .then(() => {
+                console.log("削除")
+              })
+              .catch(err => {
+                console.log("削除のエラー:",err)
+              })
+          })
+        })
+        .catch(err => {
+          console.log("削除のエラー:",err)
+        })
+    },
     showUpTrashbox(index) {
       this.showTrashbox = true;
       this.trashboxIndex = index;
@@ -89,6 +129,7 @@ export default {
           this.db.collection("todo_list").doc().set({
             id: id,
             todo: this.v_todo,
+            done: false,
             user: this.$store.state.userInfo.email,
           });
           this.db.collection("ID").doc("textIdCounter").set({
@@ -116,7 +157,7 @@ export default {
     this.$store.commit("setIsLoading", true);
   },
   created() {
-    this.firebase.auth().onAuthStateChanged((user) => {
+    this.firebase.auth().onAuthStateChanged(user => {
       if (user) {
         this.setUserInfo(user);
         this.isUser = true;
@@ -130,13 +171,16 @@ export default {
               snapshot.forEach((doc) => {
                 let docSource = doc.metadata.hasPendingWrites ? "Local" : "server";
                 if (docSource == "Local") {
-                  this.todosArray.unshift(doc.data().todo);
+                  let isData = this.todosArray.some(el => el.id == doc.data().id)
+                  if(!isData) {
+                    this.todosArray.unshift(doc.data())
+                  }
                 }
               });
             } else if (source == "server") {
               this.todosArray = [];
               snapshot.forEach((doc) => {
-                this.todosArray.push(doc.data().todo);
+                this.todosArray.push(doc.data())
               });
             }
           });
@@ -146,14 +190,14 @@ export default {
     });
   },
   mounted() {
-    setTimeout(() => {
-      this.$store.commit("setIsLoading", false);
-    }, 1000);
+    this.$store.commit("setIsLoading", false);
   },
 };
 </script>
 
 <style lang="scss" scoped>
+@import "../assets/scss/_variables";
+
 .main {
   min-height: 100vh;
   display: grid;
@@ -162,31 +206,39 @@ export default {
     ".... header ...." 60px
     "....  ....  ...." 20px
     "....  main  ...." 1fr
-    /200px 1fr 200px;
+    /auto 600px auto;
 }
 .header {
   grid-area: header;
-  // background-color:aqua;
 }
 .input-section-wrap {
   width: 100%;
   position: relative;
-  // background-color:red;
 
   .input-wrap {
     width: 100%;
-    border-bottom: 1px solid #adadad;
     position: relative;
 
+    &::after {
+      content:"";
+      position: absolute;
+      bottom: 0px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      // background-color: map-get($colors, "main-gray");
+      background-color: map-get($colors, "main-gray");
+      z-index:0;
+    }
     > input {
-      width: calc(100% - 25px);
+      width: calc(100% - 50px);
       border: none;
       outline: none;
       background: none;
     }
 
     > input::placeholder {
-      color: #adadad;
+      color: map-get($colors, "main-gray");
       transition: 0.5s;
     }
 
@@ -198,13 +250,14 @@ export default {
     > span::after {
       content: "";
       position: absolute;
-      bottom: -1px;
+      bottom: 0px;
       left: 0;
       width: 0%;
       height: 1px;
-      background-color: #6c5ce7;
+      background-color: map-get($colors, "main-purple");
       transition-property: width;
       transition-duration: 0.5s;
+      z-index:10;
     }
 
     > input:focus + span::after {
@@ -212,25 +265,31 @@ export default {
       transition-duration: 0.5s;
     }
 
-    .enter-btn {
-      width: 25px;
-      padding: 0;
-      outline: none;
-      background: none;
-      border: none;
-
-    .enter-btn:focus + svg {
-      color: #6c5ce7;
-        transition-duration: 0.5s;
+    > input:focus ~ .add-btn {
+      border: 1px solid map-get($colors, "main-purple");
+      color:map-get($colors, "main-purple");
     }
 
-      > svg {
-        width: 25px;
-        color: #adadad;
-      }
-      > svg:hover {
-        color: #6c5ce7;
-        transition-duration: 0.5s;
+    > input:focus .add-btn:hover ~ .add-btn {
+      color:white;
+    }
+
+    .add-btn {
+      width: 50px;
+      padding: 0;
+      background-color: white;
+      color:map-get($colors, "main-gray");
+      border: 1px solid map-get($colors, "main-gray");
+      outline:none;
+      box-sizing:border-box;
+      transition-duration: .3s;
+
+      &:hover,
+      &:focus {
+        border: 1px solid map-get($colors, "main-purple");
+        background-color:map-get($colors, "main-purple");
+        color:white !important;
+        transition-duration: .3s;
       }
     }
   }
@@ -244,36 +303,74 @@ export default {
   grid-area: main;
   > ul {
     list-style: none;
-    > li {
-      margin-top: 10px;
-      position: relative;
-      > span::after {
-        content: "";
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: 1px;
-        background-color: #adadad;
-        opacity:0;
-      }
-      &:hover {
-        > span::after {
-          opacity:1;
-          transition: 0.5s;
-        }
-      }
-      > span {
-        cursor: pointer;
-      }
+    > .todo {
+      width:600px;
+      padding-top: 10px;
     }
   }
 }
 
+.dumy {
+  position: relative;
+
+  > span::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1px;
+    background-color: map-get($colors, "main-gray");
+    opacity:0;
+  }
+  &:hover {
+    > span::after {
+      opacity:1;
+      transition: 0.5s;
+    }
+  }
+  > span {
+    cursor: pointer;
+  }
+}
+
+.done {
+  text-decoration:line-through;
+  color:map-get($colors, "main-gray");
+}
+
 .trashbox {
+  color:map-get($colors, "main-gray");
   position: absolute;
   top: 0;
   right: 0;
+  // float: right;
   cursor: pointer;
 }
+
+//cssアニメーション
+
+.fade-enter-active {
+  // transition:opacity .5s;
+  animation: fade-in 1s;
+}
+.fade-leave-active {
+  // transition:opacity .5s;
+  position: absolute;
+  animation: fade-in .1s reverse;
+}
+.fade-move {
+  transition: transform .5s;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+
 </style>

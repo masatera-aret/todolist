@@ -11,7 +11,7 @@
           <input v-model="password" @focus="inFocus" @blur="outFocus" type="password" />
           <span data-placeholder="password"></span>
         </div>
-        <button class="submit_btn" :class="inputCheck" @click="toSignin">signin</button>
+        <button class="login-btn" :class="inputCheck" @click="toSignin">signin</button>
       </div>
       <router-link :to="{name: 'Login'}">Login</router-link>
     </main>

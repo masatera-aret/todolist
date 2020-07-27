@@ -1,23 +1,25 @@
 <template>
-  <div id="app" class="container">
-    <VueLoading v-show="this.$store.state.isLoading"></VueLoading>
-    <router-view v-show="!this.$store.state.isLoading"></router-view>
+  <div id="app">
+    <VueLoading v-show="isLoading"></VueLoading>
+    <router-view v-show="!isLoading"></router-view>
   </div>
 </template>
 
 <script>
 import VueLoading from './views/VueLoading'
-import { mapGetters } from 'vuex'
+// import { mapGetters } from 'vuex'
 
 export default {
   components: {
     VueLoading
   },
   computed:{
-    ...mapGetters(["isLoading"])
+    isLoading() {
+      return this.$store.getters.isLoading
+    }
   },
   mounted() {
-    this.$store.commit("setIsLoading",false)
+    this.$store.commit("setIsLoading", false)
   }
 }
 </script>
