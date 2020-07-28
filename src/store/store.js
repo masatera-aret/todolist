@@ -4,7 +4,7 @@ import firebase from 'firebase/app'
 import 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
-import router from '../router/router'
+// import router from '../router/router'
 
 Vue.use(Vuex)
 
@@ -24,16 +24,17 @@ firebase.initializeApp(firebaseConfig)
 
 export default new Vuex.Store({
   state: {
+    userInfo: null,
+    isLoading: true,
     firebase: firebase,
     db: firebase.firestore(),
-    userInfo: true,
-    isLoading: true,
     providerGoogle: new firebase.auth.GoogleAuthProvider()
   },
   getters: {
     firebase: state => state.firebase,
     providerGoogle: state => state.providerGoogle,
     isLoading: state => state.isLoading,
+    userInfo: state => state.userInfo
   },
   mutations: {
     setUserInfo(state, userInfo) {
@@ -41,18 +42,6 @@ export default new Vuex.Store({
     },
     setIsLoading(state, bool) {
       state.isLoading = bool
-    }
-  },
-  actions: {
-    isUserCheckFunc(context) {
-      firebase.auth().onAuthStateChanged(user => {
-        if(user) {
-          context.commit("setUserInfo",user)
-          router.push({name:"Main"});
-        }else {
-          console.log("user情報なし")
-        }
-      })
     }
   }
 })

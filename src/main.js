@@ -7,14 +7,6 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 Vue.config.productionTip = false
 
-// Initialize Firebase
-
-// router.beforeEach((to, from, next) => {
-//   console.log("to:", to)
-//   console.log("from:", from)
-//   next()
-// })
-
 new Vue({
   router,
   store,

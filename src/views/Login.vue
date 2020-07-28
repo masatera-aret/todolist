@@ -64,25 +64,16 @@ export default {
     }
   },
   methods: {
-    toLogin() {
+    async toLogin() {
       this.$store.commit("setIsLoading", true)
-      this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
-      .then(() => {
-        this.email = ""
-        this.password = ""
-        this.$router.push({name:"Main"})
-      })
-      .catch(err => {
-        this.$store.commit("setIsLoading", false)
-        console.log("has error from to do Login:", err)
-      })
+      await this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
+      .catch((err) => console.log("ログインエラー:",err))
+      this.email = ""
+      this.password = ""
     },
-    toLoginByGoogle() {
-      this.firebase.auth().signInWithPopup(this.providerGoogle)
-        .then(result => {
-          console.log("accessToken", result.credential.accessToken)
-          console.log("user", result.user)
-        })
+    async toLoginByGoogle() {
+      await this.firebase.auth().signInWithPopup(this.providerGoogle)
+      .catch(err => console.log("googleログインでエラー:",err))
     },
     inFocus(ev) {
       ev.target.classList.add("inFocus")

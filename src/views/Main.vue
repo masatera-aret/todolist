@@ -3,31 +3,31 @@
     <header class="header">
       <div class="input-section-wrap">
         <div class="input-wrap">
-          <input v-model="v_todo" type="text" value placeholder="ToDoを入力してください" />
+          <input v-model="inputToDo" type="text" placeholder="ToDoを入力してください" />
           <span></span>
-          <button class="add-btn" @click="setToDo">
-            add
-          </button>
+          <button class="add-btn" @click="setToDo">add</button>
         </div>
-        <button class="logout-btn" v-if="isUser" @click="logout">logout</button>
+        <div v-if="isUser" class="logout-btn-wrap">
+          <button class="logout-btn" @click="logout">logout</button>
+          <p>{{getUserData.email}}さんのToDoListです</p>
+        </div>
       </div>
-      <p>{{getUserData.email}}さんのToDoListです</p>
     </header>
     <main class="todos-wrap">
       <transition-group name="fade" tag="ul" class="p-0">
-        <li
-          class="todo"
-          v-for="(todo, index) in this.getTodosArray"
-          :key="todo.id"
-        >
-          <div class="dumy"
-            @mouseover="showUpTrashbox(index)"
-            @mouseleave="hideTrashbox(index)"
-          >
-            <span v-if="todo.done == true" @click="doneIt(index,arguments[0])" class="done" :data-textid="todo.id">{{ todo.todo }}</span>
+        <li class="todo" v-for="(todo, index) in this.getTodosArray" :key="todo.id">
+          <div class="dumy" @mouseover="showUpTrashbox(index)" @mouseleave="hideTrashbox(index)">
+            <span
+              v-if="todo.done == true"
+              @click="doneIt(index,arguments[0])"
+              class="done"
+              :data-textid="todo.id"
+            >
+              {{ todo.todo }}
+            </span>
             <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">{{ todo.todo }}</span>
             <div
-              v-show="showTrashbox && index === trashboxIndex"
+              v-show="trashBox.show && index === trashBox.index"
               @click="deleteData(index)"
               class="trashbox"
               :data-textid="todo.id"
@@ -45,13 +45,13 @@
 export default {
   data() {
     return {
-      showTrashbox: false,
-      trashDelete: true,
-      trashboxIndex: "",
-      v_todo: "",
+      trashBox:{
+        show: false,
+        index: ""
+      },
+      inputToDo: "",
       todosArray: [],
       isUser: false,
-      showBorder: {inFocus: false},
     };
   },
   computed: {
@@ -66,83 +66,148 @@ export default {
     },
     getTodosArray() {
       return this.todosArray
-    }
+    },
   },
   methods: {
-    doneIt(index,ev) {
-      this.db
-          .collection("todo_list").where("id", "==", this.todosArray[index].id).get()
-          .then(snapshot => {
-            snapshot.forEach(doc => {
-              this.db.collection("todo_list").doc(doc.id).update({
-                done: !doc.data().done
+    //認証ユーザー情報の取得
+    isAuth() {
+      this.firebase.auth().onAuthStateChanged((user) => {
+        if(user) {
+          this.isUser = true
+          this.setUserInfo(user)
+        }else {
+          this.isUser = false
+          this.setUserInfo(null)
+        }
+      })
+    },
+    getToDoListSnapshot() {
+      return new Promise(resolve => {
+      this.db.collection("todo_list").where("user", "==", this.$store.getters.userInfo.email).orderBy("id", "desc")
+        .onSnapshot(snapshot => {
+          const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
+          if (source == "Local") {
+              snapshot.forEach((doc) => {
+                let docSource = doc.metadata.hasPendingWrites ? "Local" : "Server";
+                if (docSource == "Local") {
+                  let hasData = this.todosArray.some(el => el.id == doc.data().id)
+                  if (!hasData) {
+                    this.todosArray.unshift(doc.data())
+                    resolve()
+                  }
+                }
               })
-              .catch(err => {
-                console.log("update error:", err)
-              })
+          } else if (source == "Server") {
+            this.todosArray = [];
+            snapshot.forEach((doc) => {
+              this.todosArray.push(doc.data())
             })
-          })
-          .catch(err => {
-            console.log("get error:",err)
-          })
-      ev.target.classList.toggle("done")
+            resolve()
+          }
+        })
+      })
+    },
+    //firestoreに登録したtimestampのformatと、設定時間をlocal時間にする
+    changeTimestampFormat() {
+      console.log("start")
+      this.todosArray.map(el => {
+        el.timestamp = el.timestamp.toDate()
+      })
+      this.todosArray.forEach(el => {
+        let date = el.timestamp
+        let time = `${date.getFullYear()}/${(date.getMonth() + 1)}/${date.getDate()}`
+        console.log(time)
+      })
+      console.log("end")
+    },
+    doneIt(index, ev) {
+      this.db
+        .collection("todo_list")
+        .where("id", "==", this.todosArray[index].id)
+        .get()
+        .then((snapshot) => {
+          snapshot.forEach((doc) => {
+            this.db
+              .collection("todo_list")
+              .doc(doc.id)
+              .update({
+                done: !doc.data().done,
+              })
+              .catch((err) => {
+                console.log("update error:", err);
+              });
+          });
+        })
+        .catch((err) => {
+          console.log("get error:", err);
+        });
+      ev.target.classList.toggle("done");
     },
     deleteData(index) {
-      this.showTrashbox = false
-      // this.trashboxIndex = index
-      // console.log(this.todosArray[index].id)
-      // this.todosArray.splice(index,1)
-      this.db.collection("todo_list").where("id","==",this.todosArray[index].id).get()
-        .then( (data) => {
-          data.forEach(text => {
-            this.db.collection("todo_list").doc(text.id).delete()
+      this.trashBox.show = false;
+      this.db
+        .collection("todo_list")
+        .where("id", "==", this.todosArray[index].id)
+        .get()
+        .then((data) => {
+          data.forEach((text) => {
+            this.db
+              .collection("todo_list")
+              .doc(text.id)
+              .delete()
               .then(() => {
-                console.log("削除")
+                console.log("削除");
               })
-              .catch(err => {
-                console.log("削除のエラー:",err)
-              })
-          })
+              .catch((err) => {
+                console.log("削除のエラー:", err);
+              });
+          });
         })
-        .catch(err => {
-          console.log("削除のエラー:",err)
-        })
+        .catch((err) => {
+          console.log("削除のエラー:", err);
+        });
     },
     showUpTrashbox(index) {
-      this.showTrashbox = true;
-      this.trashboxIndex = index;
+      this.trashBox.show = true;
+      this.trashBox.index = index;
     },
     hideTrashbox(index) {
-      this.showTrashbox = false;
-      this.trashboxIndex = index;
+      this.trashBox.show = false;
+      this.trashBox.index = index;
     },
     //firestoreへdataを追加 idを別コレクションから取得してそのidをtodoのidに追加
     setToDo() {
-      this.db
-        .collection("ID")
-        .doc("textIdCounter")
-        .get()
-        .then((doc) => {
-          return doc.data().textID + 1;
-        })
-        .then((id) => {
-          this.db.collection("todo_list").doc().set({
-            id: id,
-            todo: this.v_todo,
-            done: false,
-            user: this.$store.state.userInfo.email,
+      if(this.inputToDo != "" && this.inputToDo.length <= 35) {
+        this.db
+          .collection("ID")
+          .doc("textIdCounter")
+          .get()
+          .then((doc) => {
+            return doc.data().textID + 1;
+          })
+          .then((id) => {
+            this.db.collection("todo_list").doc().set({
+              id: id,
+              user: this.$store.state.userInfo.email,
+              todo: this.inputToDo,
+              done: false,
+              timestamp: this.firebase.firestore.FieldValue.serverTimestamp()
+            });
+            this.db.collection("ID").doc("textIdCounter").set({
+              textID: id,
+            });
+            this.inputToDo = "";
           });
-          this.db.collection("ID").doc("textIdCounter").set({
-            textID: id,
-          });
-          this.v_todo = "";
-        });
+      }else {
+        this.inputToDo = "空はダメだよ？それか・・・文字数多い？"
+      }
     },
     logout() {
       this.firebase
         .auth()
         .signOut()
         .then(() => {
+          this.isUser = false
           console.log("ログアウトしました");
         })
         .catch((err) => {
@@ -157,37 +222,12 @@ export default {
     this.$store.commit("setIsLoading", true);
   },
   created() {
-    this.firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        this.setUserInfo(user);
-        this.isUser = true;
-        this.db
-          .collection("todo_list")
-          .where("user", "==", user.email)
-          .orderBy("id", "desc")
-          .onSnapshot((snapshot) => {
-            const source = snapshot.metadata.hasPendingWrites ? "Local" : "server";
-            if (source == "Local") {
-              snapshot.forEach((doc) => {
-                let docSource = doc.metadata.hasPendingWrites ? "Local" : "server";
-                if (docSource == "Local") {
-                  let isData = this.todosArray.some(el => el.id == doc.data().id)
-                  if(!isData) {
-                    this.todosArray.unshift(doc.data())
-                  }
-                }
-              });
-            } else if (source == "server") {
-              this.todosArray = [];
-              snapshot.forEach((doc) => {
-                this.todosArray.push(doc.data())
-              });
-            }
-          });
-      } else {
-        this.isUser = false;
-      }
-    });
+    const renderToDoList = async () => {
+      await this.isAuth()
+      await this.getToDoListSnapshot()
+      this.changeTimestampFormat()
+    }
+    renderToDoList().catch(err => console.log(err))
   },
   mounted() {
     this.$store.commit("setIsLoading", false);
@@ -203,10 +243,10 @@ export default {
   display: grid;
   grid-template:
     "....  ....  ...." 20px
-    ".... header ...." 60px
+    ".... header ...."
     "....  ....  ...." 20px
     "....  main  ...." 1fr
-    /auto 600px auto;
+    / auto 600px auto;
 }
 .header {
   grid-area: header;
@@ -220,7 +260,7 @@ export default {
     position: relative;
 
     &::after {
-      content:"";
+      content: "";
       position: absolute;
       bottom: 0px;
       left: 0;
@@ -228,7 +268,7 @@ export default {
       height: 1px;
       // background-color: map-get($colors, "main-gray");
       background-color: map-get($colors, "main-gray");
-      z-index:0;
+      z-index: 0;
     }
     > input {
       width: calc(100% - 50px);
@@ -257,7 +297,7 @@ export default {
       background-color: map-get($colors, "main-purple");
       transition-property: width;
       transition-duration: 0.5s;
-      z-index:10;
+      z-index: 10;
     }
 
     > input:focus + span::after {
@@ -267,44 +307,70 @@ export default {
 
     > input:focus ~ .add-btn {
       border: 1px solid map-get($colors, "main-purple");
-      color:map-get($colors, "main-purple");
+      color: map-get($colors, "main-purple");
     }
 
     > input:focus .add-btn:hover ~ .add-btn {
-      color:white;
+      color: white;
     }
 
     .add-btn {
       width: 50px;
       padding: 0;
       background-color: white;
-      color:map-get($colors, "main-gray");
+      color: map-get($colors, "main-gray");
       border: 1px solid map-get($colors, "main-gray");
-      outline:none;
-      box-sizing:border-box;
-      transition-duration: .3s;
+      outline: none;
+      box-sizing: border-box;
+      transition-duration: 0.3s;
 
       &:hover,
       &:focus {
         border: 1px solid map-get($colors, "main-purple");
-        background-color:map-get($colors, "main-purple");
-        color:white !important;
-        transition-duration: .3s;
+        background-color: map-get($colors, "main-purple");
+        color: white !important;
+        transition-duration: 0.3s;
       }
     }
   }
 
-  .logout-btn {
-    float: right;
+  .logout-btn-wrap {
+    position:relative;
+    // background-color: pink;
+    // height:50px;
+    margin-top: 20px;
+    .logout-btn {
+      color:white;
+      outline:none;
+      border:1px solid rgb(73, 73, 73);
+      background-color:rgb(73, 73, 73);
+      transition-duration: 0.3s;
+
+      &:hover,&:focus {
+        color:rgb(73, 73, 73);
+        border:1px solid rgb(73, 73, 73);
+        background-color:white;
+        transition-duration: 0.3s;
+      }
+    }
+    > p {
+      position:absolute;
+      top:0;
+      right:0;
+    }
   }
 }
+
+//////////////////////
+/////////main/////////
+//////////////////////
 
 .todos-wrap {
   grid-area: main;
   > ul {
     list-style: none;
     > .todo {
-      width:600px;
+      width: 600px;
       padding-top: 10px;
     }
   }
@@ -321,11 +387,11 @@ export default {
     width: 100%;
     height: 1px;
     background-color: map-get($colors, "main-gray");
-    opacity:0;
+    opacity: 0;
   }
   &:hover {
     > span::after {
-      opacity:1;
+      opacity: 1;
       transition: 0.5s;
     }
   }
@@ -335,12 +401,12 @@ export default {
 }
 
 .done {
-  text-decoration:line-through;
-  color:map-get($colors, "main-gray");
+  text-decoration: line-through;
+  color: map-get($colors, "main-gray");
 }
 
 .trashbox {
-  color:map-get($colors, "main-gray");
+  color: map-get($colors, "main-gray");
   position: absolute;
   top: 0;
   right: 0;
@@ -357,10 +423,10 @@ export default {
 .fade-leave-active {
   // transition:opacity .5s;
   position: absolute;
-  animation: fade-in .1s reverse;
+  animation: fade-in 0.1s reverse;
 }
 .fade-move {
-  transition: transform .5s;
+  transition: transform 0.5s;
 }
 
 @keyframes fade-in {
@@ -371,6 +437,4 @@ export default {
     opacity: 1;
   }
 }
-
-
 </style>
