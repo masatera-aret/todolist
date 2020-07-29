@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Login from '../views/Login.vue'
 import Signin from '../views/Signin.vue'
+import Modal from '../views/Modal.vue'
 import firebase from 'firebase/app'
 import 'firebase/app'
 
@@ -56,6 +57,11 @@ Vue.use(VueRouter)
         }
       })
     }
+  },
+  {
+    path: '/modal',
+    name: 'Modal',
+    component: Modal,
   },
   {
     path: '/',

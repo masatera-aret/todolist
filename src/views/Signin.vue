@@ -1,17 +1,17 @@
 <template>
-  <div class="account">
-    <main class="account-box">
-      <div class="account-parts-wrapp">
+  <div class="auth">
+    <main class="auth_container">
+      <div class="auth_wrapper">
         <h2 class="text-center">Signin</h2>
-        <div class="account-input-wrapp">
+        <div class="auth_inner">
           <input v-model="email" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
         </div>
-        <div class="account-input-wrapp">
+        <div class="auth_inner">
           <input v-model="password" @focus="inFocus" @blur="outFocus" type="password" />
           <span data-placeholder="password"></span>
         </div>
-        <button class="login-btn" :class="inputCheck" @click="toSignin">signin</button>
+        <button class="auth_send_btn" :class="inputCheck" @click="toSignin">signin</button>
       </div>
       <router-link :to="{name: 'Login'}">Login</router-link>
     </main>
@@ -70,6 +70,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-// Login.vueに、同じ内容のstyleが適応されている。
+@import '../assets/scss/account_auth';
 
 </style>

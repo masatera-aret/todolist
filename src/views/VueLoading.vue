@@ -1,6 +1,6 @@
 <template>
-  <div class="loader-wrapp">
-    <div class="vue-loader">
+  <div class="loader_wrapper">
+    <div class="vue_loader">
       <vue-loading
         type="spin"
         color="rgb(145, 145, 145)"
@@ -22,7 +22,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .loader-wrapp {
+  .loader_wrapper {
     width: 100%;
     min-height:100vh;
     display:grid;
@@ -32,7 +32,7 @@ export default {
     "..... ..... ....."
     /auto   50px  auto;
 
-    .vue-loader {
+    .vue_loader {
       grid-area:vue;
     }
   }

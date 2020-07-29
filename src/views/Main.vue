@@ -1,31 +1,28 @@
 <template>
-  <div class="main">
-    <header class="header">
-      <div class="input-section-wrap">
-        <div class="input-wrap">
+  <div class="global_container">
+    <header class="header_container">
+      <div class="header_wrapper">
+        <div class="todo_post">
           <input v-model="inputToDo" type="text" placeholder="ToDoを入力してください" />
           <span></span>
-          <button class="add-btn" @click="setToDo">add</button>
+          <button class="todo_post_add_btn" @click="setToDo">add</button>
         </div>
-        <div v-if="isUser" class="logout-btn-wrap">
-          <button class="logout-btn" @click="logout">logout</button>
+        <div v-if="isUser" class="user_info header-user_info_area">
+          <button class="logout_btn" @click="logout">logout</button>
           <p>{{getUserData.email}}さんのToDoListです</p>
         </div>
       </div>
     </header>
-    <main class="todos-wrap">
+    <main class="main todos-wrap">
       <transition-group name="fade" tag="ul" class="p-0">
-        <li class="todo" v-for="(todo, index) in this.getTodosArray" :key="todo.id">
-          <div class="dumy" @mouseover="showUpTrashbox(index)" @mouseleave="hideTrashbox(index)">
-            <span
-              v-if="todo.done == true"
-              @click="doneIt(index,arguments[0])"
-              class="done"
-              :data-textid="todo.id"
-            >
+        <li class="main-todo" v-for="(todo, index) in this.getTodosArray" :key="todo.id">
+          <div class="main-todo_post_wrap dumy" @mouseover="showUpTrashbox(index)" @mouseleave="hideTrashbox(index)">
+            <span v-if="todo.done == true" @click="doneIt(index,arguments[0])" class="todo_done" :data-textid="todo.id">
               {{ todo.todo }}
             </span>
-            <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">{{ todo.todo }}</span>
+            <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">
+              {{ todo.todo }}
+            </span>
             <div
               v-show="trashBox.show && index === trashBox.index"
               @click="deleteData(index)"
@@ -141,7 +138,7 @@ export default {
         .catch((err) => {
           console.log("get error:", err);
         });
-      ev.target.classList.toggle("done");
+      ev.target.classList.toggle("todo_done");
     },
     deleteData(index) {
       this.trashBox.show = false;
@@ -238,7 +235,7 @@ export default {
 <style lang="scss" scoped>
 @import "../assets/scss/_variables";
 
-.main {
+.global_container {
   min-height: 100vh;
   display: grid;
   grid-template:
@@ -248,116 +245,111 @@ export default {
     "....  main  ...." 1fr
     / auto 600px auto;
 }
-.header {
+
+.header_container {
   grid-area: header;
 }
-.input-section-wrap {
+
+.header_wrapper {
   width: 100%;
   position: relative;
+}
 
-  .input-wrap {
+.todo_post {
+  width: 100%;
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0px;
+    left: 0;
     width: 100%;
-    position: relative;
-
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: 0px;
-      left: 0;
-      width: 100%;
-      height: 1px;
-      // background-color: map-get($colors, "main-gray");
-      background-color: map-get($colors, "main-gray");
-      z-index: 0;
-    }
-    > input {
-      width: calc(100% - 50px);
-      border: none;
-      outline: none;
-      background: none;
-    }
-
-    > input::placeholder {
-      color: map-get($colors, "main-gray");
-      transition: 0.5s;
-    }
-
-    > input:focus::placeholder {
-      color: transparent;
-      transition: 0.5s;
-    }
-
-    > span::after {
-      content: "";
-      position: absolute;
-      bottom: 0px;
-      left: 0;
-      width: 0%;
-      height: 1px;
-      background-color: map-get($colors, "main-purple");
-      transition-property: width;
-      transition-duration: 0.5s;
-      z-index: 10;
-    }
-
-    > input:focus + span::after {
-      width: 100%;
-      transition-duration: 0.5s;
-    }
-
-    > input:focus ~ .add-btn {
-      border: 1px solid map-get($colors, "main-purple");
-      color: map-get($colors, "main-purple");
-    }
-
-    > input:focus .add-btn:hover ~ .add-btn {
-      color: white;
-    }
-
-    .add-btn {
-      width: 50px;
-      padding: 0;
-      background-color: white;
-      color: map-get($colors, "main-gray");
-      border: 1px solid map-get($colors, "main-gray");
-      outline: none;
-      box-sizing: border-box;
-      transition-duration: 0.3s;
-
-      &:hover,
-      &:focus {
-        border: 1px solid map-get($colors, "main-purple");
-        background-color: map-get($colors, "main-purple");
-        color: white !important;
-        transition-duration: 0.3s;
-      }
-    }
+    height: 1px;
+    background-color: map-get($colors, "light_gray");
+    z-index: 0;
+  }
+  > input {
+    width: calc(100% - 50px);
+    border: none;
+    outline: none;
+    background: none;
+  }
+  > input::placeholder {
+    color: map-get($colors, "light_gray");
+    transition: 0.5s;
+  }
+  > input:focus::placeholder {
+    color: transparent;
+    transition: 0.5s;
   }
 
-  .logout-btn-wrap {
-    position:relative;
-    // background-color: pink;
-    // height:50px;
-    margin-top: 20px;
-    .logout-btn {
-      color:white;
-      outline:none;
-      border:1px solid rgb(73, 73, 73);
-      background-color:rgb(73, 73, 73);
-      transition-duration: 0.3s;
+  > span::after {
+    content: "";
+    position: absolute;
+    bottom: 0px;
+    left: 0;
+    width: 0%;
+    height: 1px;
+    background-color: map-get($colors, "dark_gray");
+    transition-property: width;
+    transition-duration: 0.5s;
+    z-index: 10;
+  }
+  > input:focus + span::after {
+    width: 100%;
+    transition-duration: 0.5s;
+  }
+  > input:focus ~ &-add_btn {
+    border: 1px solid map-get($colors, "dark_gray");
+    color: map-get($colors, "dark_gray");
+  }
+  > input:focus &-add_btn:hover ~ &-add_btn {
+    color: white;
+  }
+}
 
-      &:hover,&:focus {
-        color:rgb(73, 73, 73);
-        border:1px solid rgb(73, 73, 73);
-        background-color:white;
-        transition-duration: 0.3s;
-      }
+.todo_post_add_btn {
+    width: 50px;
+    padding: 0;
+    background-color: white;
+    color: map-get($colors, "light_gray");
+    border: 1px solid map-get($colors, "light_gray");
+    outline: none;
+    box-sizing: border-box;
+    transition-duration: 0.3s;
+
+    &:hover,
+    &:focus {
+      border: 1px solid map-get($colors, "dark_gray");
+      background-color: map-get($colors, "dark_gray");
+      color: white !important;
+      transition-duration: 0.3s;
     }
-    > p {
-      position:absolute;
-      top:0;
-      right:0;
-    }
+}
+
+.user_info {
+  position:relative;
+  margin-top: 20px;
+
+  > p {
+  position:absolute;
+  top:0;
+  right:0;
+  }
+}
+
+.logout_btn {
+  color:white;
+  outline:none;
+  border:1px solid map-get($colors, "dark_gray");
+  background-color:map-get($colors, "dark_gray");
+  transition-duration: 0.3s;
+
+  &:hover,&:focus {
+    color:map-get($colors, "dark_gray");
+    border:1px solid map-get($colors, "dark_gray");
+    background-color:white;
+    transition-duration: 0.3s;
   }
 }
 
@@ -369,7 +361,7 @@ export default {
   grid-area: main;
   > ul {
     list-style: none;
-    > .todo {
+    > .main-todo {
       width: 600px;
       padding-top: 10px;
     }
@@ -386,7 +378,7 @@ export default {
     bottom: 0;
     width: 100%;
     height: 1px;
-    background-color: map-get($colors, "main-gray");
+    background-color: map-get($colors, "light_gray");
     opacity: 0;
   }
   &:hover {
@@ -400,9 +392,9 @@ export default {
   }
 }
 
-.done {
+.todo_done {
   text-decoration: line-through;
-  color: map-get($colors, "main-gray");
+  color: map-get($colors, "light_gray");
 }
 
 .trashbox {
