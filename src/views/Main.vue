@@ -13,16 +13,21 @@
         </div>
       </div>
     </header>
-    <main class="main todos-wrap">
+    <main class="main_container">
       <transition-group name="fade" tag="ul" class="p-0">
         <li class="main-todo" v-for="(todo, index) in this.getTodosArray" :key="todo.id">
-          <div class="main-todo_post_wrap dumy" @mouseover="showUpTrashbox(index)" @mouseleave="hideTrashbox(index)">
-            <span v-if="todo.done == true" @click="doneIt(index,arguments[0])" class="todo_done" :data-textid="todo.id">
-              {{ todo.todo }}
-            </span>
-            <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">
-              {{ todo.todo }}
-            </span>
+          <div
+            class="main-todo_post_wrap"
+            @mouseover="showUpTrashbox(index)"
+            @mouseleave="hideTrashbox(index)"
+          >
+            <span
+              v-if="todo.done == true"
+              @click="doneIt(index,arguments[0])"
+              class="todo_done"
+              :data-textid="todo.id"
+            >{{ todo.todo }}</span>
+            <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">{{ todo.todo }}</span>
             <div
               v-show="trashBox.show && index === trashBox.index"
               @click="deleteData(index)"
@@ -35,6 +40,15 @@
         </li>
       </transition-group>
     </main>
+    <!-- 文字数オーバーで表示するモーダル -->
+    <b-modal
+      v-model="modalShow"
+      ok-only:true
+      hide-header:true
+      button-size="sm"
+      ok-variant="secondary"
+      footer-border-variant="white"
+    >{{ modalComment }}</b-modal>
   </div>
 </template>
 
@@ -42,9 +56,11 @@
 export default {
   data() {
     return {
-      trashBox:{
+      modalShow: false,
+      modalComment: "modal comment",
+      trashBox: {
         show: false,
-        index: ""
+        index: "",
       },
       inputToDo: "",
       todosArray: [],
@@ -62,107 +78,93 @@ export default {
       return this.$store.state.userInfo;
     },
     getTodosArray() {
-      return this.todosArray
+      return this.todosArray;
     },
   },
   methods: {
     //認証ユーザー情報の取得
     isAuth() {
       this.firebase.auth().onAuthStateChanged((user) => {
-        if(user) {
-          this.isUser = true
-          this.setUserInfo(user)
-        }else {
-          this.isUser = false
-          this.setUserInfo(null)
+        if (user) {
+          this.isUser = true;
+          this.setUserInfo(user);
+        } else {
+          this.isUser = false;
+          this.setUserInfo(null);
         }
-      })
+      });
     },
-    getToDoListSnapshot() {
-      return new Promise(resolve => {
-      this.db.collection("todo_list").where("user", "==", this.$store.getters.userInfo.email).orderBy("id", "desc")
-        .onSnapshot(snapshot => {
-          const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
-          if (source == "Local") {
-              snapshot.forEach((doc) => {
-                let docSource = doc.metadata.hasPendingWrites ? "Local" : "Server";
-                if (docSource == "Local") {
-                  let hasData = this.todosArray.some(el => el.id == doc.data().id)
-                  if (!hasData) {
-                    this.todosArray.unshift(doc.data())
-                    resolve()
-                  }
-                }
-              })
-          } else if (source == "Server") {
-            this.todosArray = [];
-            snapshot.forEach((doc) => {
-              this.todosArray.push(doc.data())
-            })
-            resolve()
-          }
-        })
-      })
+
+    //読み込み時に実行される関数内で実行するモジュール関数
+    whatSource(snapshot, localCb, serverCb = this.onlyReturnFunc) {
+      const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
+      if (source == "Local") {
+        localCb;
+      } else if (source == "Server") {
+        serverCb;
+      }
     },
-    //firestoreに登録したtimestampのformatと、設定時間をlocal時間にする
-    changeTimestampFormat() {
-      console.log("start")
-      this.todosArray.map(el => {
-        el.timestamp = el.timestamp.toDate()
-      })
-      this.todosArray.forEach(el => {
-        let date = el.timestamp
-        let time = `${date.getFullYear()}/${(date.getMonth() + 1)}/${date.getDate()}`
-        console.log(time)
-      })
-      console.log("end")
+    sourceLocal(snapshot) {
+      snapshot.forEach((doc) => {
+        this.whatSource(doc, this.newTodoAdd(doc));
+      });
     },
-    doneIt(index, ev) {
-      this.db
-        .collection("todo_list")
-        .where("id", "==", this.todosArray[index].id)
-        .get()
-        .then((snapshot) => {
-          snapshot.forEach((doc) => {
-            this.db
-              .collection("todo_list")
-              .doc(doc.id)
-              .update({
-                done: !doc.data().done,
-              })
-              .catch((err) => {
-                console.log("update error:", err);
-              });
-          });
-        })
-        .catch((err) => {
-          console.log("get error:", err);
-        });
-      ev.target.classList.toggle("todo_done");
+    sourceServer(snapshot) {
+      this.todosArray = [];
+      snapshot.forEach((doc) => {
+        this.todosArray.push(doc.data());
+      });
     },
-    deleteData(index) {
+    newTodoAdd(doc) {
+      let hasData = this.todosArray.some((el) => el.id == doc.data().id);
+      if (!hasData) {
+        this.todosArray.unshift(doc.data());
+      }
+    },
+    onlyReturnFunc() {
+      return;
+    },
+
+    //読み込み時に実行される関数
+    async getToDoListSnapshot() {
+      await this.db.collection("todo_list").where("uid", "==", this.$store.getters.userInfo.uid).orderBy("id", "desc")
+      .onSnapshot((snapshot) => {
+        this.whatSource(
+          snapshot,
+          this.sourceLocal(snapshot),
+          this.sourceServer(snapshot)
+        );
+      }, this.onlyReturnFunc);
+    },
+
+    async doneIt(index, ev) {
+      const getThis = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
+      .catch((err) => {
+        console.log("get error:", err)
+      })
+      getThis.forEach((doc) => {
+        this.db
+          .collection("todo_list")
+          .doc(doc.id)
+          .update({
+            done: !doc.data().done,
+          })
+          .catch((err) => {
+            console.log("update error:", err)
+          })
+      })
+      ev.target.classList.toggle("todo_done")
+    },
+
+    async deleteData(index) {
       this.trashBox.show = false;
-      this.db
-        .collection("todo_list")
-        .where("id", "==", this.todosArray[index].id)
-        .get()
-        .then((data) => {
-          data.forEach((text) => {
-            this.db
-              .collection("todo_list")
-              .doc(text.id)
-              .delete()
-              .then(() => {
-                console.log("削除");
-              })
-              .catch((err) => {
-                console.log("削除のエラー:", err);
-              });
-          });
-        })
-        .catch((err) => {
-          console.log("削除のエラー:", err);
-        });
+      const deleteThing = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
+      .catch(err => console.log('getのエラー:', err))
+      deleteThing.forEach(async (text) => {
+        await this.db.collection("todo_list").doc(text.id).delete()
+        .catch((err) => console.log("削除のエラー:", err))
+        console.log("削除しました")
+      })
     },
     showUpTrashbox(index) {
       this.trashBox.show = true;
@@ -172,31 +174,43 @@ export default {
       this.trashBox.show = false;
       this.trashBox.index = index;
     },
+
+    async updateIncrementID() {
+      const IncrementIDRef = this.db.collection("ID").doc("textIdCounter");
+      await IncrementIDRef.update({
+        textID: this.firebase.firestore.FieldValue.increment(1),
+      });
+    },
+
+    async getIncrementID() {
+      const getIDRef = await this.db
+        .collection("ID")
+        .doc("textIdCounter")
+        .get();
+      return getIDRef.data().textID;
+    },
     //firestoreへdataを追加 idを別コレクションから取得してそのidをtodoのidに追加
-    setToDo() {
-      if(this.inputToDo != "" && this.inputToDo.length <= 35) {
-        this.db
-          .collection("ID")
-          .doc("textIdCounter")
-          .get()
-          .then((doc) => {
-            return doc.data().textID + 1;
-          })
-          .then((id) => {
-            this.db.collection("todo_list").doc().set({
-              id: id,
-              user: this.$store.state.userInfo.email,
-              todo: this.inputToDo,
-              done: false,
-              timestamp: this.firebase.firestore.FieldValue.serverTimestamp()
-            });
-            this.db.collection("ID").doc("textIdCounter").set({
-              textID: id,
-            });
-            this.inputToDo = "";
+    async setToDo() {
+      if (this.inputToDo != "") {
+        if (this.inputToDo.length <= 30) {
+          await this.updateIncrementID();
+          let incrementID = await this.getIncrementID();
+          this.db.collection("todo_list").doc().set({
+            id: incrementID,
+            uid: this.$store.getters.userInfo.uid,
+            user: this.$store.state.userInfo.email,
+            todo: this.inputToDo,
+            done: false,
+            timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
           });
-      }else {
-        this.inputToDo = "空はダメだよ？それか・・・文字数多い？"
+          this.inputToDo = "";
+        } else {
+          this.modalComment = "入力可能文字数は30文字までです。";
+          this.modalShow = true;
+        }
+      } else {
+        this.modalComment = "未入力です";
+        this.modalShow = true;
       }
     },
     logout() {
@@ -204,8 +218,7 @@ export default {
         .auth()
         .signOut()
         .then(() => {
-          this.isUser = false
-          console.log("ログアウトしました");
+          this.isUser = false;
         })
         .catch((err) => {
           console.log("catch any error by sign out:", err);
@@ -220,11 +233,11 @@ export default {
   },
   created() {
     const renderToDoList = async () => {
-      await this.isAuth()
-      await this.getToDoListSnapshot()
-      this.changeTimestampFormat()
-    }
-    renderToDoList().catch(err => console.log(err))
+      await this.isAuth();
+      await this.getToDoListSnapshot();
+      // this.changeTimestampFormat()
+    };
+    renderToDoList().catch((err) => console.log(err));
   },
   mounted() {
     this.$store.commit("setIsLoading", false);
@@ -309,46 +322,47 @@ export default {
 }
 
 .todo_post_add_btn {
-    width: 50px;
-    padding: 0;
-    background-color: white;
-    color: map-get($colors, "light_gray");
-    border: 1px solid map-get($colors, "light_gray");
-    outline: none;
-    box-sizing: border-box;
-    transition-duration: 0.3s;
+  width: 50px;
+  padding: 0;
+  background-color: white;
+  color: map-get($colors, "light_gray");
+  border: 1px solid map-get($colors, "light_gray");
+  outline: none;
+  box-sizing: border-box;
+  transition-duration: 0.3s;
 
-    &:hover,
-    &:focus {
-      border: 1px solid map-get($colors, "dark_gray");
-      background-color: map-get($colors, "dark_gray");
-      color: white !important;
-      transition-duration: 0.3s;
-    }
+  &:hover,
+  &:focus {
+    border: 1px solid map-get($colors, "dark_gray");
+    background-color: map-get($colors, "dark_gray");
+    color: white !important;
+    transition-duration: 0.3s;
+  }
 }
 
 .user_info {
-  position:relative;
+  position: relative;
   margin-top: 20px;
 
   > p {
-  position:absolute;
-  top:0;
-  right:0;
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 }
 
 .logout_btn {
-  color:white;
-  outline:none;
-  border:1px solid map-get($colors, "dark_gray");
-  background-color:map-get($colors, "dark_gray");
+  color: map-get($colors, "light_gray");
+  outline: none;
+  border: 1px solid map-get($colors, "light_gray");
+  background-color: white;
   transition-duration: 0.3s;
 
-  &:hover,&:focus {
-    color:map-get($colors, "dark_gray");
-    border:1px solid map-get($colors, "dark_gray");
-    background-color:white;
+  &:hover,
+  &:focus {
+    color: white;
+    border: 1px solid map-get($colors, "dark_gray");
+    background-color: map-get($colors, "dark_gray");
     transition-duration: 0.3s;
   }
 }
@@ -357,7 +371,7 @@ export default {
 /////////main/////////
 //////////////////////
 
-.todos-wrap {
+.main_container {
   grid-area: main;
   > ul {
     list-style: none;
@@ -368,7 +382,7 @@ export default {
   }
 }
 
-.dumy {
+.main-todo_post_wrap {
   position: relative;
 
   > span::after {

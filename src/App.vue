@@ -1,7 +1,9 @@
 <template>
   <div id="app">
     <VueLoading v-show="isLoading"></VueLoading>
+    <!-- <keep-alive> -->
     <router-view v-show="!isLoading"></router-view>
+    <!-- </keep-alive> -->
   </div>
 </template>
 
@@ -18,7 +20,23 @@ export default {
       return this.$store.getters.isLoading
     }
   },
+  watch: {
+    $route(to) {
+      this.createPageTitle(to)
+    }
+  },
+  methods: {
+    createPageTitle(to) {
+      if(to.meta.title) {
+        document.title = to.meta.title
+      }else {
+        document.title = "テストです"
+      }
+    }
+  },
   mounted() {
+    let to = this.$route
+    this.createPageTitle(to)
     this.$store.commit("setIsLoading", false)
   }
 }

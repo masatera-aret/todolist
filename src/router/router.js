@@ -2,7 +2,6 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Login from '../views/Login.vue'
 import Signin from '../views/Signin.vue'
-import Modal from '../views/Modal.vue'
 import firebase from 'firebase/app'
 import 'firebase/app'
 
@@ -13,6 +12,7 @@ Vue.use(VueRouter)
     path: '/login',
     name: 'Login',
     component: Login,
+    meta: {title: "ログインの画面"},
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
         if(user) {
@@ -27,6 +27,7 @@ Vue.use(VueRouter)
     path: '/signin',
     name: 'Signin',
     component: Signin,
+    meta: {title: "sign inの画面"},
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
         if(user) {
@@ -40,6 +41,7 @@ Vue.use(VueRouter)
   {
     path: '/main',
     name: 'Main',
+    meta: {title: "ToDoList"},
     // route level code-splitting
     // this generates a separate chunk (main.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
@@ -47,21 +49,12 @@ Vue.use(VueRouter)
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
         if(!user) {
-          if(from.path == "/signin") {
-            next({name:"Signin"})
-          }else {
-            next({name:"Login"})
-          }
+          next({name:"Login"})
         }else {
           next()
         }
       })
     }
-  },
-  {
-    path: '/modal',
-    name: 'Modal',
-    component: Modal,
   },
   {
     path: '/',

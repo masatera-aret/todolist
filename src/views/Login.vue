@@ -4,14 +4,14 @@
       <div class="auth_wrapper">
         <h2 class="text-center">Login</h2>
         <div class="auth_inner">
-          <input v-model="email" :class="isEmail" @focus="inFocus" @blur="outFocus" type="email" />
+          <input v-model="email" :class="emailStatus" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
         </div>
         <div class="auth_inner">
-          <input v-model="password" :class="isPass" @focus="inFocus" @blur="outFocus" type="password" />
+          <input v-model="password" :class="passwordStatus" @focus="inFocus" @blur="outFocus" type="password" />
           <span data-placeholder="password"></span>
         </div>
-        <button class="auth_send_btn" :class="inputCheck" @click="toLogin">login</button>
+        <button class="auth_send_btn" :tabindex="tabindex" :class="inputCheck" @click="toLogin">login</button>
         <!-- <button @click="toLoginByGoogle">googleでログインだ！</button> -->
         <button class="login_btn_by_google" @click="toLoginByGoogle">
           <img src="https://img.icons8.com/color/48/000000/google-logo.png"/>
@@ -29,8 +29,10 @@
 export default {
   data() {
     return {
-      email: "terakado@terakado.jp",
-      password: "terakado",
+      email: "",
+      password: "",
+      emailStatus: { in_focus: false, out_focus: false },
+      passwordStatus: { in_focus: false, out_focus: false },
       emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/,
     }
   },
@@ -43,23 +45,36 @@ export default {
     },
     inputCheck() {
       if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
-        return {btnClickPermission: true}
+        return {btn_click_permission: true}
       }else {
-        return {btnClickPermission: false}
+        return {btn_click_permission: false}
       }
     },
-    isEmail() {
-      if(this.email != "") {
-        return {inFocus: true, outFocus: true}
+    tabindex() {
+      if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
+        return "0"
       }else {
-        return {inFocus: true, outFocus: false}
+        return "-1"
+      }
+    }
+  },
+  watch: {
+    email: function () {
+      if (this.emailRegexp.test(this.email)) {
+        this.emailStatus.in_focus = true
+        this.emailStatus.out_focus = true
+      } else {
+        this.emailStatus.in_focus = true
+        this.emailStatus.out_focus = false
       }
     },
-    isPass() {
-      if(this.password != "") {
-        return {inFocus: true, outFocus: true}
+    password: function () {
+      if (this.password.length >= 6 && this.password.length <= 20) {
+        this.passwordStatus.in_focus = true
+        this.passwordStatus.out_focus = true
       }else {
-        return {inFocus: true, outFocus: false}
+        this.passwordStatus.in_focus = true
+        this.passwordStatus.out_focus = false
       }
     }
   },
@@ -76,17 +91,20 @@ export default {
       .catch(err => console.log("googleログインでエラー:",err))
     },
     inFocus(ev) {
-      ev.target.classList.add("inFocus")
+      ev.target.classList.add("in_focus");
     },
+
     outFocus(ev) {
-      if(ev.target.value == "") {
-        ev.target.classList.remove("inFocus")
-        ev.target.classList.remove("outFocus")
-      }else {
-        ev.target.classList.add("outFocus")
+      const el = ev.target;
+      if (el.value == "") {
+        el.classList.remove("in_focus");
       }
-    }
+    },
   },
+  created() {
+    this.email = "terakado@terakado.jp"
+    this.password = "terakado"
+  }
 }
 </script>
 
