@@ -12,7 +12,7 @@ Vue.use(VueRouter)
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: {title: "ログインの画面"},
+    meta: {title: "Login"},
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
         if(user) {
@@ -27,7 +27,7 @@ Vue.use(VueRouter)
     path: '/signin',
     name: 'Signin',
     component: Signin,
-    meta: {title: "sign inの画面"},
+    meta: {title: "Signin"},
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
         if(user) {
@@ -41,7 +41,7 @@ Vue.use(VueRouter)
   {
     path: '/main',
     name: 'Main',
-    meta: {title: "ToDoList"},
+    meta: {title: "My ToDoList"},
     // route level code-splitting
     // this generates a separate chunk (main.[hash].js) for this route
     // which is lazy-loaded when the route is visited.

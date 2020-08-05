@@ -8,8 +8,8 @@
           <button class="todo_post_add_btn" @click="setToDo">add</button>
         </div>
         <div v-if="isUser" class="user_info header-user_info_area">
-          <button class="logout_btn" @click="logout">logout</button>
           <p>{{getUserData.email}}さんのToDoListです</p>
+          <button class="logout_btn" @click="logout">logout</button>
         </div>
       </div>
     </header>
@@ -43,12 +43,13 @@
     <!-- 文字数オーバーで表示するモーダル -->
     <b-modal
       v-model="modalShow"
-      ok-only:true
-      hide-header:true
+      :ok-only="bModal.okOnly"
+      :hide-header="bModal.hideHeader"
       button-size="sm"
       ok-variant="secondary"
       footer-border-variant="white"
-    >{{ modalComment }}</b-modal>
+    >{{ modalComment }}
+    </b-modal>
   </div>
 </template>
 
@@ -56,6 +57,10 @@
 export default {
   data() {
     return {
+      bModal: {
+        okOnly: true,
+        hideHeader: true,
+      },
       modalShow: false,
       modalComment: "modal comment",
       trashBox: {
@@ -138,34 +143,28 @@ export default {
     },
 
     async doneIt(index, ev) {
-      const getThis = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
-      .catch((err) => {
-        console.log("get error:", err)
-      })
-      getThis.forEach((doc) => {
-        this.db
-          .collection("todo_list")
-          .doc(doc.id)
-          .update({
-            done: !doc.data().done,
-          })
-          .catch((err) => {
-            console.log("update error:", err)
-          })
-      })
       ev.target.classList.toggle("todo_done")
+      const getThis = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
+      .catch((err) => console.log("get error:", err))
+      getThis.forEach((doc) => {
+        this.db.collection("todo_list").doc(doc.id).update({
+          done: !doc.data().done,
+        })
+        .catch((err) => console.log("update error:", err))
+      })
     },
 
     async deleteData(index) {
       this.trashBox.show = false;
       const deleteThing = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
       .catch(err => console.log('getのエラー:', err))
-      deleteThing.forEach(async (text) => {
-        await this.db.collection("todo_list").doc(text.id).delete()
+      deleteThing.forEach((text) => {
+        this.db.collection("todo_list").doc(text.id).delete()
         .catch((err) => console.log("削除のエラー:", err))
         console.log("削除しました")
       })
     },
+
     showUpTrashbox(index) {
       this.trashBox.show = true;
       this.trashBox.index = index;
@@ -176,53 +175,44 @@ export default {
     },
 
     async updateIncrementID() {
-      const IncrementIDRef = this.db.collection("ID").doc("textIdCounter");
+      const IncrementIDRef = this.db.collection("ID").doc("textIdCounter")
       await IncrementIDRef.update({
         textID: this.firebase.firestore.FieldValue.increment(1),
       });
     },
 
     async getIncrementID() {
-      const getIDRef = await this.db
-        .collection("ID")
-        .doc("textIdCounter")
-        .get();
-      return getIDRef.data().textID;
+      const getIDRef = await this.db.collection("ID").doc("textIdCounter").get()
+      return getIDRef.data().textID
     },
     //firestoreへdataを追加 idを別コレクションから取得してそのidをtodoのidに追加
-    async setToDo() {
-      if (this.inputToDo != "") {
-        if (this.inputToDo.length <= 30) {
-          await this.updateIncrementID();
-          let incrementID = await this.getIncrementID();
-          this.db.collection("todo_list").doc().set({
-            id: incrementID,
-            uid: this.$store.getters.userInfo.uid,
-            user: this.$store.state.userInfo.email,
-            todo: this.inputToDo,
-            done: false,
-            timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
-          });
-          this.inputToDo = "";
-        } else {
-          this.modalComment = "入力可能文字数は30文字までです。";
-          this.modalShow = true;
-        }
-      } else {
-        this.modalComment = "未入力です";
-        this.modalShow = true;
-      }
-    },
-    logout() {
-      this.firebase
-        .auth()
-        .signOut()
-        .then(() => {
-          this.isUser = false;
-        })
-        .catch((err) => {
-          console.log("catch any error by sign out:", err);
+    async setToDo(ev) {
+      ev.target.disabled = true
+      if (this.inputToDo != "" && this.inputToDo.length <= 30) {
+        this.updateIncrementID();
+        let incrementID = await this.getIncrementID();
+        this.db.collection("todo_list").doc().set({
+          id: incrementID,
+          uid: this.$store.getters.userInfo.uid,
+          user: this.$store.state.userInfo.email,
+          todo: this.inputToDo,
+          done: false,
+          timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
         });
+        this.inputToDo = "";
+      }else if(this.inputToDo == "") {
+        this.modalComment = "未入力です"
+        this.modalShow = true
+      }else if(this.inputToDo.length > 30) {
+        this.modalComment = "入力可能文字数は30文字までです。"
+        this.modalShow = true
+      }
+      ev.target.disabled = false
+    },
+    async logout() {
+      await this.firebase.auth().signOut()
+      .catch(err => console.log("catch any error by sign out:", err))
+      this.isUser = false
     },
     setUserInfo(userInfo) {
       this.$store.commit("setUserInfo", userInfo);
@@ -234,7 +224,7 @@ export default {
   created() {
     const renderToDoList = async () => {
       await this.isAuth();
-      await this.getToDoListSnapshot();
+      this.getToDoListSnapshot();
       // this.changeTimestampFormat()
     };
     renderToDoList().catch((err) => console.log(err));
@@ -254,9 +244,18 @@ export default {
   grid-template:
     "....  ....  ...." 20px
     ".... header ...."
-    "....  ....  ...." 20px
+    "....  ....  ...." 40px
     "....  main  ...." 1fr
     / auto 600px auto;
+
+  @media screen and (max-width:600px) {
+    grid-template:
+      "....  ....  ...." 20px
+      ".... header ...."
+      "....  ....  ...." 40px
+      "....  main  ...." 1fr
+      /auto 90% auto;
+  }
 }
 
 .header_container {
@@ -349,6 +348,13 @@ export default {
     top: 0;
     right: 0;
   }
+  @media screen and (max-width:600px) {
+    position:static;
+    text-align: center;
+    P {
+      position:static;
+    }
+  }
 }
 
 .logout_btn {
@@ -378,6 +384,9 @@ export default {
     > .main-todo {
       width: 600px;
       padding-top: 10px;
+      @media screen and (max-width:600px) {
+        width: 100%;
+      }
     }
   }
 }
@@ -421,18 +430,22 @@ export default {
 }
 
 //cssアニメーション
-
+.fade-enter {
+  opacity:0;
+}
 .fade-enter-active {
-  // transition:opacity .5s;
   animation: fade-in 1s;
+  // animation-delay: .5s;
+}
+.fade-enter-to {
+  opacity:0;
 }
 .fade-leave-active {
-  // transition:opacity .5s;
   position: absolute;
   animation: fade-in 0.1s reverse;
 }
 .fade-move {
-  transition: transform 0.5s;
+  transition: transform .2s;
 }
 
 @keyframes fade-in {
