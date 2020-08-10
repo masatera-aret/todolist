@@ -18,7 +18,7 @@
         <li class="main-todo" v-for="(todo, index) in this.getTodosArray" :key="todo.id">
           <div
             class="main-todo_post_wrap"
-            @mouseover="showUpTrashbox(index)"
+            @mouseover="showTrashbox(index)"
             @mouseleave="hideTrashbox(index)"
           >
             <span
@@ -30,7 +30,7 @@
             <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">{{ todo.todo }}</span>
             <div
               v-show="trashBox.show && index === trashBox.index"
-              @click="deleteData(index)"
+              @click="deleteTodo(index)"
               class="trashbox"
               :data-textid="todo.id"
             >
@@ -88,7 +88,7 @@ export default {
   },
   methods: {
     //認証ユーザー情報の取得
-    isAuth() {
+    hasAuth() {
       this.firebase.auth().onAuthStateChanged((user) => {
         if (user) {
           this.isUser = true;
@@ -101,7 +101,7 @@ export default {
     },
 
     //読み込み時に実行される関数内で実行するモジュール関数
-    whatSource(snapshot, localCb, serverCb = this.onlyReturnFunc) {
+    checkingSource(snapshot, localCb, serverCb = this.onlyReturnFunc) {
       const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
       if (source == "Local") {
         localCb;
@@ -109,23 +109,28 @@ export default {
         serverCb;
       }
     },
-    sourceLocal(snapshot) {
+    newTodoAddToTodosArray(snapshot) {
       snapshot.forEach((doc) => {
-        this.whatSource(doc, this.newTodoAdd(doc));
-      });
+        this.checkingSource(doc, (doc) => {
+          let hasData = this.todosArray.some((el) => el.id == doc.data().id)
+          if (!hasData) {
+            this.todosArray.unshift(doc.data());
+          }
+        })
+      })
     },
-    sourceServer(snapshot) {
+    resourceDataPushToTodosArray(snapshot) {
       this.todosArray = [];
       snapshot.forEach((doc) => {
         this.todosArray.push(doc.data());
       });
     },
-    newTodoAdd(doc) {
-      let hasData = this.todosArray.some((el) => el.id == doc.data().id);
-      if (!hasData) {
-        this.todosArray.unshift(doc.data());
-      }
-    },
+    // newTodoAdd(doc) {
+    //   let hasData = this.todosArray.some((el) => el.id == doc.data().id);
+    //   if (!hasData) {
+    //     this.todosArray.unshift(doc.data());
+    //   }
+    // },
     onlyReturnFunc() {
       return;
     },
@@ -134,10 +139,10 @@ export default {
     async getToDoListSnapshot() {
       await this.db.collection("todo_list").where("uid", "==", this.$store.getters.userInfo.uid).orderBy("id", "desc")
       .onSnapshot((snapshot) => {
-        this.whatSource(
+        this.checkingSource(
           snapshot,
-          this.sourceLocal(snapshot),
-          this.sourceServer(snapshot)
+          this.newTodoAddToTodosArray(snapshot),
+          this.resourceDataPushToTodosArray(snapshot)
         );
       }, this.onlyReturnFunc);
     },
@@ -154,7 +159,7 @@ export default {
       })
     },
 
-    async deleteData(index) {
+    async deleteTodo(index) {
       this.trashBox.show = false;
       const deleteThing = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
       .catch(err => console.log('getのエラー:', err))
@@ -165,7 +170,7 @@ export default {
       })
     },
 
-    showUpTrashbox(index) {
+    showTrashbox(index) {
       this.trashBox.show = true;
       this.trashBox.index = index;
     },
@@ -189,8 +194,8 @@ export default {
     async setToDo(ev) {
       ev.target.disabled = true
       if (this.inputToDo != "" && this.inputToDo.length <= 30) {
-        this.updateIncrementID();
-        let incrementID = await this.getIncrementID();
+        await this.updateIncrementID()
+        let incrementID = await this.getIncrementID()
         this.db.collection("todo_list").doc().set({
           id: incrementID,
           uid: this.$store.getters.userInfo.uid,
@@ -198,7 +203,7 @@ export default {
           todo: this.inputToDo,
           done: false,
           timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
-        });
+        })
         this.inputToDo = "";
       }else if(this.inputToDo == "") {
         this.modalComment = "未入力です"
@@ -223,7 +228,7 @@ export default {
   },
   created() {
     const renderToDoList = async () => {
-      await this.isAuth();
+      await this.hasAuth();
       this.getToDoListSnapshot();
       // this.changeTimestampFormat()
     };

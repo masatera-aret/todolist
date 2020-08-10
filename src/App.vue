@@ -30,7 +30,7 @@ export default {
       if(to.meta.title) {
         document.title = to.meta.title
       }else {
-        document.title = "テストです"
+        document.title = "ToDoList"
       }
     }
   },

@@ -11,7 +11,7 @@
           <input v-model="password" :class="passwordStatus" @focus="inFocus" @blur="outFocus" type="password" />
           <span data-placeholder="password"></span>
         </div>
-        <button class="auth_send_btn" :tabindex="tabindex" :class="inputCheck" @click="toLogin">login</button>
+        <button class="auth_send_btn" :tabindex="tabindex" :class="inputRuleJudging" @click="toLogin">login</button>
         <!-- <button @click="toLoginByGoogle">googleでログインだ！</button> -->
         <button class="login_btn_by_google" @click="toLoginByGoogle">
           <img src="https://img.icons8.com/color/48/000000/google-logo.png"/>
@@ -24,58 +24,15 @@
 </template>
 
 <script>
+import {LoginSigninMixin} from './LoginSigninMIxin';
 // import { mapGetters } from 'vuex'
 
 export default {
-  data() {
-    return {
-      email: "",
-      password: "",
-      emailStatus: { in_focus: false, out_focus: false },
-      passwordStatus: { in_focus: false, out_focus: false },
-      emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/,
-    }
-  },
+  mixins:[LoginSigninMixin],
+
   computed: {
-    firebase() {
-      return this.$store.getters.firebase
-    },
     providerGoogle() {
-      return this.$store.state.providerGoogle
-    },
-    inputCheck() {
-      if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
-        return {btn_click_permission: true}
-      }else {
-        return {btn_click_permission: false}
-      }
-    },
-    tabindex() {
-      if(this.emailRegexp.test(this.email) && this.password.length >= 6) {
-        return "0"
-      }else {
-        return "-1"
-      }
-    }
-  },
-  watch: {
-    email: function () {
-      if (this.emailRegexp.test(this.email)) {
-        this.emailStatus.in_focus = true
-        this.emailStatus.out_focus = true
-      } else {
-        this.emailStatus.in_focus = true
-        this.emailStatus.out_focus = false
-      }
-    },
-    password: function () {
-      if (this.password.length >= 6 && this.password.length <= 20) {
-        this.passwordStatus.in_focus = true
-        this.passwordStatus.out_focus = true
-      }else {
-        this.passwordStatus.in_focus = true
-        this.passwordStatus.out_focus = false
-      }
+      return this.$store.getters.providerGoogle
     }
   },
   methods: {
@@ -89,17 +46,7 @@ export default {
     async toLoginByGoogle() {
       await this.firebase.auth().signInWithPopup(this.providerGoogle)
       .catch(err => console.log("googleログインでエラー:",err))
-    },
-    inFocus(ev) {
-      ev.target.classList.add("in_focus");
-    },
-
-    outFocus(ev) {
-      const el = ev.target;
-      if (el.value == "") {
-        el.classList.remove("in_focus");
-      }
-    },
+    }
   },
   created() {
     this.email = "terakado@terakado.jp"

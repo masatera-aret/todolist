@@ -26,7 +26,7 @@
         <button
           class="auth_send_btn"
           :tabindex="tabindex"
-          :class="inputCheck"
+          :class="inputRuleJudging"
           @click="toSignin"
         >signin</button>
       </div>
@@ -36,56 +36,13 @@
 </template>
 
 <script>
+import {LoginSigninMixin} from './LoginSigninMIxin'
+
 export default {
-  data() {
-    return {
-      emailStatus: { in_focus: false, out_focus: false },
-      passwordStatus: { in_focus: false, out_focus: false },
-      email: "",
-      password: "",
-      emailRegexp: /^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/,
-    };
-  },
+  mixins:[LoginSigninMixin],
   computed: {
     db() {
       return this.$store.state.db;
-    },
-    firebase() {
-      return this.$store.state.firebase;
-    },
-    inputCheck() {
-      if (this.emailRegexp.test(this.email) && this.password.length >= 6) {
-        return { btn_click_permission: true };
-      } else {
-        return { btn_click_permission: false };
-      }
-    },
-    tabindex() {
-      if (this.emailRegexp.test(this.email) && this.password.length >= 6) {
-        return "0";
-      } else {
-        return "-1";
-      }
-    },
-  },
-  watch: {
-    email: function () {
-      if (this.emailRegexp.test(this.email)) {
-        this.emailStatus.in_focus = true
-        this.emailStatus.out_focus = true
-      } else {
-        this.emailStatus.in_focus = true
-        this.emailStatus.out_focus = false
-      }
-    },
-    password: function () {
-      if (this.password.length >= 6 && this.password.length <= 20) {
-        this.passwordStatus.in_focus = true
-        this.passwordStatus.out_focus = true
-      }else {
-        this.passwordStatus.in_focus = true
-        this.passwordStatus.out_focus = false
-      }
     }
   },
   methods: {
@@ -99,16 +56,6 @@ export default {
         });
       this.email = "";
       this.password = "";
-    },
-    inFocus(ev) {
-      ev.target.classList.add("in_focus");
-    },
-
-    outFocus(ev) {
-      const el = ev.target;
-      if (el.value == "") {
-        el.classList.remove("in_focus");
-      }
     }
   }
 };
