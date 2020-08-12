@@ -19,5 +19,12 @@ service cloud.firestore {
     match /ID/{documentID} {
       allow read, write: if request.auth.uid != null;
     }
+    match /users/{documentID} {
+      allow read, write: if request.auth.uid != null;
+
+      match /todo_list/{textID} {
+        allow read, write: if request.auth.uid != null;
+      }
+    }
   }
 }

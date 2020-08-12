@@ -15,7 +15,7 @@
     </header>
     <main class="main_container">
       <transition-group name="fade" tag="ul" class="p-0">
-        <li class="main-todo" v-for="(todo, index) in this.getTodosArray" :key="todo.id">
+        <li class="main-todo" v-for="(todo, index) in this.getTodosArray" :key="todo.text_id">
           <div
             class="main-todo_post_wrap"
             @mouseover="showTrashbox(index)"
@@ -25,14 +25,18 @@
               v-if="todo.done == true"
               @click="doneIt(index,arguments[0])"
               class="todo_done"
-              :data-textid="todo.id"
-            >{{ todo.todo }}</span>
-            <span v-else @click="doneIt(index,arguments[0])" :data-textid="todo.id">{{ todo.todo }}</span>
+              :data-textid="todo.text_id"
+            >{{ todo.text }}</span>
+            <span
+              v-else
+              @click="doneIt(index,arguments[0])"
+              :data-textid="todo.text_id"
+            >{{ todo.text }}</span>
             <div
               v-show="trashBox.show && index === trashBox.index"
               @click="deleteTodo(index)"
               class="trashbox"
-              :data-textid="todo.id"
+              :data-textid="todo.text_id"
             >
               <i class="fas fa-trash-alt"></i>
             </div>
@@ -48,8 +52,7 @@
       button-size="sm"
       ok-variant="secondary"
       footer-border-variant="white"
-    >{{ modalComment }}
-    </b-modal>
+    >{{ modalComment }}</b-modal>
   </div>
 </template>
 
@@ -69,6 +72,7 @@ export default {
       },
       inputToDo: "",
       todosArray: [],
+      userTextId: 0,
       isUser: false,
     };
   },
@@ -85,8 +89,16 @@ export default {
     getTodosArray() {
       return this.todosArray;
     },
+    queryGetUserDB() {
+      return this.db.collection("users").doc(this.getUserData.uid)
+    }
   },
   methods: {
+    async getuserTextId() {
+      const user = await this.queryGetUserDB
+        .get();
+      this.userTextId = user.data().text_id;
+    },
     //認証ユーザー情報の取得
     hasAuth() {
       this.firebase.auth().onAuthStateChanged((user) => {
@@ -112,12 +124,12 @@ export default {
     newTodoAddToTodosArray(snapshot) {
       snapshot.forEach((doc) => {
         this.checkingSource(doc, (doc) => {
-          let hasData = this.todosArray.some((el) => el.id == doc.data().id)
+          let hasData = this.todosArray.some((el) => el.id == doc.data().id);
           if (!hasData) {
             this.todosArray.unshift(doc.data());
           }
-        })
-      })
+        });
+      });
     },
     resourceDataPushToTodosArray(snapshot) {
       this.todosArray = [];
@@ -137,37 +149,51 @@ export default {
 
     //読み込み時に実行される関数
     async getToDoListSnapshot() {
-      await this.db.collection("todo_list").where("uid", "==", this.$store.getters.userInfo.uid).orderBy("id", "desc")
-      .onSnapshot((snapshot) => {
-        this.checkingSource(
-          snapshot,
-          this.newTodoAddToTodosArray(snapshot),
-          this.resourceDataPushToTodosArray(snapshot)
-        );
-      }, this.onlyReturnFunc);
+      await this.queryGetUserDB
+        .collection("todo_list")
+        .orderBy("timestamp", "desc")
+        .onSnapshot((snapshot) => {
+          this.checkingSource(
+            snapshot,
+            this.newTodoAddToTodosArray(snapshot),
+            this.resourceDataPushToTodosArray(snapshot)
+          );
+        }, this.onlyReturnFunc);
     },
-
+    //todoの実行済みかどうかを反映させる
     async doneIt(index, ev) {
-      ev.target.classList.toggle("todo_done")
-      const getThis = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
-      .catch((err) => console.log("get error:", err))
+      ev.target.classList.toggle("todo_done");
+      const getThis = await this.queryGetUserDB
+        .collection("todo_list")
+        .where("text_id", "==", this.getTodosArray[index].text_id)
+        .get()
+        .catch((err) => console.log("get error:", err));
       getThis.forEach((doc) => {
-        this.db.collection("todo_list").doc(doc.id).update({
-          done: !doc.data().done,
-        })
-        .catch((err) => console.log("update error:", err))
-      })
+        this.queryGetUserDB
+          .collection("todo_list")
+          .doc(doc.id)
+          .update({
+            done: !doc.data().done,
+          })
+          .catch((err) => console.log("update error:", err));
+      });
     },
 
     async deleteTodo(index) {
       this.trashBox.show = false;
-      const deleteThing = await this.db.collection("todo_list").where("id", "==", this.todosArray[index].id).get()
-      .catch(err => console.log('getのエラー:', err))
+      const deleteThing = await this.queryGetUserDB
+        .collection("todo_list")
+        .where("text_id", "==", this.todosArray[index].text_id)
+        .get()
+        .catch((err) => console.log("getのエラー:", err));
       deleteThing.forEach((text) => {
-        this.db.collection("todo_list").doc(text.id).delete()
-        .catch((err) => console.log("削除のエラー:", err))
-        console.log("削除しました")
-      })
+        this.queryGetUserDB
+          .collection("todo_list")
+          .doc(text.id)
+          .delete()
+          .catch((err) => console.log("削除のエラー:", err));
+        console.log("削除しました");
+      });
     },
 
     showTrashbox(index) {
@@ -180,44 +206,64 @@ export default {
     },
 
     async updateIncrementID() {
-      const IncrementIDRef = this.db.collection("ID").doc("textIdCounter")
+      const IncrementIDRef = this.db.collection("ID").doc("textIdCounter");
       await IncrementIDRef.update({
         textID: this.firebase.firestore.FieldValue.increment(1),
       });
     },
 
     async getIncrementID() {
-      const getIDRef = await this.db.collection("ID").doc("textIdCounter").get()
-      return getIDRef.data().textID
+      const getIDRef = await this.db
+        .collection("ID")
+        .doc("textIdCounter")
+        .get();
+      return getIDRef.data().textID;
     },
-    //firestoreへdataを追加 idを別コレクションから取得してそのidをtodoのidに追加
+
+    async getThisUserTextId() {
+      const user = await this.queryGetUserDB
+        .get();
+      return user.data().text_id;
+    },
+
+    async incrementTextId() {
+      const user = await this.db.collection("users").doc(this.getUserData.uid);
+      await user.update({
+        text_id: this.firebase.firestore.FieldValue.increment(1),
+      });
+    },
+
     async setToDo(ev) {
-      ev.target.disabled = true
+      ev.target.disabled = true;
       if (this.inputToDo != "" && this.inputToDo.length <= 30) {
-        await this.updateIncrementID()
-        let incrementID = await this.getIncrementID()
-        this.db.collection("todo_list").doc().set({
-          id: incrementID,
-          uid: this.$store.getters.userInfo.uid,
-          user: this.$store.state.userInfo.email,
-          todo: this.inputToDo,
-          done: false,
-          timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
-        })
+        this.userTextId += 1;
+        this.queryGetUserDB
+          .collection("todo_list")
+          .doc()
+          .set({
+            text_id: this.userTextId,
+            text: this.inputToDo,
+            done: false,
+            timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
+          });
         this.inputToDo = "";
-      }else if(this.inputToDo == "") {
-        this.modalComment = "未入力です"
-        this.modalShow = true
-      }else if(this.inputToDo.length > 30) {
-        this.modalComment = "入力可能文字数は30文字までです。"
-        this.modalShow = true
+        this.incrementTextId();
+      } else if (this.inputToDo == "") {
+        this.modalComment = "未入力です";
+        this.modalShow = true;
+      } else if (this.inputToDo.length > 30) {
+        this.modalComment = "入力可能文字数は30文字までです。";
+        this.modalShow = true;
       }
-      ev.target.disabled = false
+      ev.target.disabled = false;
     },
+
     async logout() {
-      await this.firebase.auth().signOut()
-      .catch(err => console.log("catch any error by sign out:", err))
-      this.isUser = false
+      await this.firebase
+        .auth()
+        .signOut()
+        .catch((err) => console.log("catch any error by sign out:", err));
+      this.isUser = false;
     },
     setUserInfo(userInfo) {
       this.$store.commit("setUserInfo", userInfo);
@@ -229,7 +275,8 @@ export default {
   created() {
     const renderToDoList = async () => {
       await this.hasAuth();
-      this.getToDoListSnapshot();
+      await this.getToDoListSnapshot();
+      this.getuserTextId();
       // this.changeTimestampFormat()
     };
     renderToDoList().catch((err) => console.log(err));
@@ -253,13 +300,13 @@ export default {
     "....  main  ...." 1fr
     / auto 600px auto;
 
-  @media screen and (max-width:600px) {
+  @media screen and (max-width: 600px) {
     grid-template:
       "....  ....  ...." 20px
       ".... header ...."
       "....  ....  ...." 40px
       "....  main  ...." 1fr
-      /auto 90% auto;
+      / auto 90% auto;
   }
 }
 
@@ -353,11 +400,11 @@ export default {
     top: 0;
     right: 0;
   }
-  @media screen and (max-width:600px) {
-    position:static;
+  @media screen and (max-width: 600px) {
+    position: static;
     text-align: center;
     P {
-      position:static;
+      position: static;
     }
   }
 }
@@ -389,7 +436,7 @@ export default {
     > .main-todo {
       width: 600px;
       padding-top: 10px;
-      @media screen and (max-width:600px) {
+      @media screen and (max-width: 600px) {
         width: 100%;
       }
     }
@@ -436,21 +483,21 @@ export default {
 
 //cssアニメーション
 .fade-enter {
-  opacity:0;
+  opacity: 0;
 }
 .fade-enter-active {
   animation: fade-in 1s;
   // animation-delay: .5s;
 }
 .fade-enter-to {
-  opacity:0;
+  opacity: 0;
 }
 .fade-leave-active {
   position: absolute;
   animation: fade-in 0.1s reverse;
 }
 .fade-move {
-  transition: transform .2s;
+  transition: transform 0.2s;
 }
 
 @keyframes fade-in {

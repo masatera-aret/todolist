@@ -46,14 +46,23 @@ export default {
     }
   },
   methods: {
+    async setAuthData() {
+      const user = await this.firebase.auth().currentUser
+      if(user) {
+        this.db.collection("users").doc(user.uid).set({
+          text_id: 0,
+          uid: user.uid,
+          email: user.email,
+          created_at: this.firebase.firestore.FieldValue.serverTimestamp()
+        })
+      }
+    },
+
     async toSignin() {
       this.$store.commit("setIsLoading", true);
-      await this.firebase
-        .auth()
-        .createUserWithEmailAndPassword(this.email, this.password)
-        .catch((err) => {
-          console.log("SignIn firebase Error:", err);
-        });
+      await this.firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
+        .catch((err) => console.log("SignIn firebase Error:", err))
+      this.setAuthData()
       this.email = "";
       this.password = "";
     }
