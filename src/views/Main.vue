@@ -95,8 +95,7 @@ export default {
   },
   methods: {
     async getuserTextId() {
-      const user = await this.queryGetUserDB
-        .get();
+      const user = await this.queryGetUserDB.get();
       this.userTextId = user.data().text_id;
     },
     //認証ユーザー情報の取得

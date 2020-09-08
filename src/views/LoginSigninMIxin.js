@@ -12,6 +12,9 @@ export const LoginSigninMixin = {
     firebase() {
       return this.$store.getters.firebase
     },
+    db() {
+      return this.$store.state.db;
+    },
     inputRuleJudging() {
       if(this.emailRegexp.test(this.email) && (this.password.length >= 6 && this.password.length < 20)) {
         return {btn_click_permission: true}

@@ -40,11 +40,6 @@ import {LoginSigninMixin} from './LoginSigninMIxin'
 
 export default {
   mixins:[LoginSigninMixin],
-  computed: {
-    db() {
-      return this.$store.state.db;
-    }
-  },
   methods: {
     async setAuthData() {
       const user = await this.firebase.auth().currentUser

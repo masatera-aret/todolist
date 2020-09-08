@@ -43,9 +43,23 @@ export default {
       this.email = ""
       this.password = ""
     },
+    async setAuthDataWithGoogle() {
+      const user = await this.firebase.auth().currentUser
+      const testData = await this.db.collection("users").doc(user.uid).get()
+      if(!testData.data()) {
+        this.db.collection("users").doc(user.uid).set({
+          text_id: 0,
+          uid: user.uid,
+          email: user.email,
+          created_at: this.firebase.firestore.FieldValue.serverTimestamp()
+        })
+      }
+    },
     async toLoginByGoogle() {
       await this.firebase.auth().signInWithPopup(this.providerGoogle)
       .catch(err => console.log("googleログインでエラー:",err))
+      this.$store.commit("setIsLoading", true)
+      this.setAuthDataWithGoogle()
     }
   },
   created() {
