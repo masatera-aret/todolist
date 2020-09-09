@@ -28,13 +28,15 @@ export default new Vuex.Store({
     isLoading: true,
     firebase: firebase,
     db: firebase.firestore(),
-    providerGoogle: new firebase.auth.GoogleAuthProvider()
+    providerGoogle: new firebase.auth.GoogleAuthProvider(),
+    modalShow: false
   },
   getters: {
     firebase: state => state.firebase,
     providerGoogle: state => state.providerGoogle,
     isLoading: state => state.isLoading,
-    userInfo: state => state.userInfo
+    userInfo: state => state.userInfo,
+    modalShow: state => state.modalShow
   },
   mutations: {
     setUserInfo(state, userInfo) {
@@ -42,6 +44,9 @@ export default new Vuex.Store({
     },
     setIsLoading(state, bool) {
       state.isLoading = bool
+    },
+    setModalShow(state, bool) {
+      state.modalShow = bool
     }
   }
 })

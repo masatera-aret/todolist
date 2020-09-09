@@ -1,10 +1,8 @@
 <template>
-  <div id="app">
+<v-app>
     <VueLoading v-show="isLoading"></VueLoading>
-    <!-- <keep-alive> -->
     <router-view v-show="!isLoading"></router-view>
-    <!-- </keep-alive> -->
-  </div>
+</v-app>
 </template>
 
 <script>

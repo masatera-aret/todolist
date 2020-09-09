@@ -16,26 +16,23 @@
     <main class="main_container">
       <Todos :propTodoArray="todosArray" />
     </main>
-    <!-- 文字数オーバーで表示するモーダル -->
-    <b-modal
-      v-model="modalShow"
-      :ok-only="bModal.okOnly"
-      :hide-header="bModal.hideHeader"
-      button-size="sm"
-      ok-variant="secondary"
-      footer-border-variant="white"
-    >
-      {{ modalComment }}
-    </b-modal>
+    <!-- 入力をチェックしてモーダルを表示 -->
+    <v-row justify="center">
+      <v-dialog v-model="modalShow" max-width="450">
+        <Modal :modal-comment="modalComment" @closeModal="closeModal"></Modal>
+      </v-dialog>
+    </v-row>
   </div>
 </template>
 
 <script>
 import Todos from '../components/Todos'
+import Modal from '../components/Modal'
 
 export default {
   components: {
-    Todos
+    Todos,
+    Modal
   },
   data() {
     return {
@@ -73,6 +70,10 @@ export default {
     }
   },
   methods: {
+    closeModal() {
+      this.modalShow = false;
+    },
+
     async getuserTextId() {
       const user = await this.queryGetUserDB.get();
       this.userTextId = user.data().text_id;
