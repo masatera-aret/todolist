@@ -7,6 +7,7 @@
 
 <script>
 import VueLoading from './views/VueLoading'
+import { mapGetters, mapMutations } from 'vuex'
 // import { mapGetters } from 'vuex'
 
 export default {
@@ -14,9 +15,7 @@ export default {
     VueLoading
   },
   computed:{
-    isLoading() {
-      return this.$store.getters.isLoading
-    }
+    ...mapGetters(["firebase", "isLoading", "userInfo", "test"]),
   },
   watch: {
     $route(to) {
@@ -24,6 +23,16 @@ export default {
     }
   },
   methods: {
+    ...mapMutations(["setUserInfo", "setIsLoading"]),
+    hasAuth() {
+      this.firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          this.setUserInfo(user)
+        } else {
+          this.setIsLoading(false)
+        }
+      });
+    },
     createPageTitle(to) {
       if(to.meta.title) {
         document.title = to.meta.title
@@ -31,6 +40,9 @@ export default {
         document.title = "ToDoList"
       }
     }
+  },
+  created() {
+    this.hasAuth()
   },
   mounted() {
     let to = this.$route

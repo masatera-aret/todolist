@@ -7,8 +7,8 @@
           <span></span>
           <button class="todo_post_add_btn" @click="setToDo">add</button>
         </div>
-        <div v-if="isUser" class="user_info header-user_info_area">
-          <p>{{getUserData.email}}さんのToDoListです</p>
+        <div v-if="userInfo" class="user_info header-user_info_area">
+          <p>{{userInfo.email}}さんのToDoListです</p>
           <button class="logout_btn" @click="logout">logout</button>
         </div>
       </div>
@@ -26,6 +26,7 @@
 </template>
 
 <script>
+import { mapGetters, mapMutations } from 'vuex'
 import Todos from '../components/Todos'
 import Modal from '../components/Modal'
 
@@ -49,27 +50,21 @@ export default {
       inputToDo: "",
       todosArray: [],
       userTextId: 0,
-      isUser: false,
     };
   },
   computed: {
-    db() {
-      return this.$store.state.db;
-    },
-    firebase() {
-      return this.$store.state.firebase;
-    },
-    getUserData() {
-      return this.$store.state.userInfo;
-    },
+    ...mapGetters(["db", "firebase", "userInfo"]),
     getTodosArray() {
       return this.todosArray;
     },
     queryGetUserDB() {
-      return this.db.collection("users").doc(this.getUserData.uid)
+      return this.db.collection("users").doc(this.userInfo.uid)
     }
   },
+
   methods: {
+    ...mapMutations(["setUserInfo", "setIsLoading"]),
+
     closeModal() {
       this.modalShow = false;
     },
@@ -82,10 +77,8 @@ export default {
     hasAuth() {
       this.firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-          this.isUser = true;
           this.setUserInfo(user);
         } else {
-          this.isUser = false;
           this.setUserInfo(null);
         }
       });
@@ -157,7 +150,7 @@ export default {
     },
 
     async incrementTextId() {
-      const user = await this.db.collection("users").doc(this.getUserData.uid);
+      const user = await this.db.collection("users").doc(this.userInfo.uid);
       await user.update({
         text_id: this.firebase.firestore.FieldValue.increment(1),
       });
@@ -194,25 +187,20 @@ export default {
         .signOut()
         .catch((err) => console.log("catch any error by sign out:", err));
       this.isUser = false;
-    },
-    setUserInfo(userInfo) {
-      this.$store.commit("setUserInfo", userInfo);
-    },
+    }
   },
   beforeCreate() {
-    this.$store.commit("setIsLoading", true);
+    this.$store.commit("setIsLoading",true);
   },
   created() {
     const renderToDoList = async () => {
-      await this.hasAuth();
       await this.getToDoListSnapshot();
       this.getuserTextId();
-      // this.changeTimestampFormat()
     };
     renderToDoList().catch((err) => console.log(err));
   },
   mounted() {
-    this.$store.commit("setIsLoading", false);
+    this.setIsLoading(false);
   },
 };
 </script>

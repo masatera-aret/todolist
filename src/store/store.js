@@ -25,13 +25,14 @@ firebase.initializeApp(firebaseConfig)
 export default new Vuex.Store({
   state: {
     userInfo: null,
-    isLoading: true,
+    isLoading: true,  //Modalの表示
     firebase: firebase,
     db: firebase.firestore(),
     providerGoogle: new firebase.auth.GoogleAuthProvider(),
     modalShow: false
   },
   getters: {
+    db: state => state.db,
     firebase: state => state.firebase,
     providerGoogle: state => state.providerGoogle,
     isLoading: state => state.isLoading,

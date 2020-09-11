@@ -24,24 +24,36 @@
 </template>
 
 <script>
+import { mapGetters, mapMutations } from 'vuex';
 import {LoginSigninMixin} from './LoginSigninMIxin';
-// import { mapGetters } from 'vuex'
 
 export default {
   mixins:[LoginSigninMixin],
 
   computed: {
-    providerGoogle() {
-      return this.$store.getters.providerGoogle
-    }
+    ...mapGetters(["providerGoogle"]),
   },
+
   methods: {
+  ...mapMutations(["setUserInfo", "setIsLoading"]),
+    hasAuth() {
+      this.firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          this.setUserInfo(user)
+          this.email = ""
+          this.password = ""
+        } else {
+          this.setIsLoading(false)
+        }
+      });
+    },
     async toLogin() {
-      this.$store.commit("setIsLoading", true)
+      this.setIsLoading(true)
       await this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
-      .catch((err) => console.log("ログインエラー:",err))
-      this.email = ""
-      this.password = ""
+      .catch((err) => {
+        console.log("ログインエラー", err)
+      })
+      this.hasAuth()
     },
     async setAuthDataWithGoogle() {
       const user = await this.firebase.auth().currentUser
@@ -58,14 +70,17 @@ export default {
     async toLoginByGoogle() {
       await this.firebase.auth().signInWithPopup(this.providerGoogle)
       .catch(err => console.log("googleログインでエラー:",err))
-      this.$store.commit("setIsLoading", true)
+      this.setIsLoading(true)
       this.setAuthDataWithGoogle()
     }
   },
   created() {
     this.email = "terakado@terakado.jp"
     this.password = "terakado"
-  }
+  },
+  mounted() {
+    this.setIsLoading(false);
+  },
 }
 </script>
 

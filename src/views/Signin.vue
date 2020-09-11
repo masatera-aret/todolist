@@ -36,11 +36,13 @@
 </template>
 
 <script>
-import {LoginSigninMixin} from './LoginSigninMIxin'
+import { mapMutations } from 'vuex'
+import { LoginSigninMixin } from './LoginSigninMIxin'
 
 export default {
-  mixins:[LoginSigninMixin],
+  mixins:[ LoginSigninMixin ],
   methods: {
+    ...mapMutations(["setIsLoading"]),
     async setAuthData() {
       const user = await this.firebase.auth().currentUser
       if(user) {
@@ -54,7 +56,7 @@ export default {
     },
 
     async toSignin() {
-      this.$store.commit("setIsLoading", true);
+      this.setIsLoading(true);
       await this.firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
         .catch((err) => console.log("SignIn firebase Error:", err))
       this.setAuthData()
