@@ -7,14 +7,14 @@
           <span></span>
           <button class="todo_post_add_btn" @click="setToDo">add</button>
         </div>
-        <div v-if="userInfo" class="user_info header-user_info_area">
-          <p>{{userInfo.email}}さんのToDoListです</p>
+        <div v-if="userClass" class="user_info header-user_info_area">
+          <p>{{userClass.userInfo.email}}さんのToDoListです</p>
           <button class="logout_btn" @click="logout">logout</button>
         </div>
       </div>
     </header>
     <main class="main_container">
-      <Todos :propTodoArray="todosArray" />
+      <Todos v-if="userClass" />
     </main>
     <!-- 入力をチェックしてモーダルを表示 -->
     <v-row justify="center">
@@ -48,84 +48,26 @@ export default {
         index: "",
       },
       inputToDo: "",
-      todosArray: [],
-      userTextId: 0,
     };
   },
   computed: {
-    ...mapGetters(["db", "firebase", "userInfo"]),
-    getTodosArray() {
-      return this.todosArray;
-    },
+    ...mapGetters(["db", "firebase", "userInfo", "userClass"]),
     queryGetUserDB() {
-      return this.db.collection("users").doc(this.userInfo.uid)
+      return this.db.collection("users").doc(this.userClass.userInfo.uid)
     }
   },
 
   methods: {
-    ...mapMutations(["setUserInfo", "setIsLoading"]),
+    ...mapMutations(["setUserInfo", "setIsLoading", "setUserClass"]),
 
     closeModal() {
       this.modalShow = false;
     },
 
     async getuserTextId() {
-      const user = await this.queryGetUserDB.get();
-      this.userTextId = user.data().text_id;
-    },
-    //認証ユーザー情報の取得
-    hasAuth() {
-      this.firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-          this.setUserInfo(user);
-        } else {
-          this.setUserInfo(null);
-        }
-      });
-    },
-
-    //読み込み時に実行される関数内で実行するモジュール関数
-    checkingSource(snapshot, localCb, serverCb = this.onlyReturnFunc) {
-      const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
-      if (source == "Local") {
-        localCb;
-      } else if (source == "Server") {
-        serverCb;
-      }
-    },
-    newTodoAddToTodosArray(snapshot) {
-      snapshot.forEach((doc) => {
-        this.checkingSource(doc, (doc) => {
-          let hasData = this.todosArray.some((el) => el.id == doc.data().id);
-          if (!hasData) {
-            this.todosArray.unshift(doc.data());
-          }
-        });
-      });
-    },
-    resourceDataPushToTodosArray(snapshot) {
-      this.todosArray = [];
-      snapshot.forEach((doc) => {
-        this.todosArray.push(doc.data());
-      });
-    },
-
-    onlyReturnFunc() {
-      return;
-    },
-
-    //読み込み時に実行される関数
-    async getToDoListSnapshot() {
-      await this.queryGetUserDB
-        .collection("todo_list")
-        .orderBy("timestamp", "desc")
-        .onSnapshot((snapshot) => {
-          this.checkingSource(
-            snapshot,
-            this.newTodoAddToTodosArray(snapshot),
-            this.resourceDataPushToTodosArray(snapshot)
-          );
-        }, this.onlyReturnFunc);
+      const user = await this.queryGetUserDB.get()
+      this.userClass.userPostNumber.setter = user.data().text_id;
+      // console.log(this.userClass.userPostNumber.getter)
     },
 
     async updateIncrementID() {
@@ -143,14 +85,14 @@ export default {
       return getIDRef.data().textID;
     },
 
-    async getThisUserTextId() {
-      const user = await this.queryGetUserDB
-        .get();
-      return user.data().text_id;
-    },
+    // async getThisUserTextId() {
+    //   const user = await this.queryGetUserDB
+    //     .get();
+    //   return user.data().text_id;
+    // },
 
     async incrementTextId() {
-      const user = await this.db.collection("users").doc(this.userInfo.uid);
+      const user = await this.db.collection("users").doc(this.userClass.userInfo.uid);
       await user.update({
         text_id: this.firebase.firestore.FieldValue.increment(1),
       });
@@ -159,12 +101,12 @@ export default {
     async setToDo(ev) {
       ev.target.disabled = true;
       if (this.inputToDo != "" && this.inputToDo.length <= 30) {
-        this.userTextId += 1;
+        this.userClass.userPostNumber.setter = this.userClass.userPostNumber.getter + 1;
         this.queryGetUserDB
           .collection("todo_list")
           .doc()
           .set({
-            text_id: this.userTextId,
+            text_id: this.userClass.userPostNumber.getter,
             text: this.inputToDo,
             done: false,
             timestamp: this.firebase.firestore.FieldValue.serverTimestamp(),
@@ -186,24 +128,69 @@ export default {
         .auth()
         .signOut()
         .catch((err) => console.log("catch any error by sign out:", err));
-      this.isUser = false;
-    }
-  },
-  beforeCreate() {
-    this.$store.commit("setIsLoading",true);
-  },
-  created() {
-    const renderToDoList = async () => {
+        // this.setUserClass(null)
+    },
+
+    //読み込み時に実行される関数内で実行するモジュール関数
+    checkingSource(snapshot, caseLocalCallback, caseServerCallback = this.onlyReturnFunc) {
+      const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
+      if (source == "Local") {
+        caseLocalCallback;
+      } else if (source == "Server") {
+        caseServerCallback;
+      }
+    },
+    newTodoAddToTodosArray(snapshot) {
+      snapshot.forEach((doc) => {
+        this.checkingSource(doc, (doc) => {
+          let hasData = this.userClass.todoList.some((el) => el.id == doc.data().id);
+          if (!hasData) {
+            this.userClass.unshiftTodolist(doc.data());
+          }
+        });
+      });
+    },
+    resourceDataPushToTodosArray(snapshot) {
+      this.userClass.modelsTodoList = [];
+      snapshot.forEach((doc) => {
+        this.userClass.pushTodoList(doc.data());
+      });
+    },
+
+    onlyReturnFunc() {
+      return;
+    },
+    //読み込み時に実行される関数
+    async getToDoListSnapshot() {
+      await this.queryGetUserDB
+        .collection("todo_list")
+        .orderBy("timestamp", "desc")
+        .onSnapshot((snapshot) => {
+          this.checkingSource(
+            snapshot,
+            this.newTodoAddToTodosArray(snapshot),
+            this.resourceDataPushToTodosArray(snapshot)
+          );
+        }, this.onlyReturnFunc);
+    },
+    async renderToDoList() {
       await this.getToDoListSnapshot();
       this.getuserTextId();
-    };
-    renderToDoList().catch((err) => console.log(err));
+    }
+  },
+  created() {
+    this.renderToDoList().catch((err) => console.log(err));
   },
   mounted() {
     this.setIsLoading(false);
   },
 };
 </script>
+
+
+
+
+
 
 <style lang="scss" scoped>
 @import "../assets/scss/_variables";

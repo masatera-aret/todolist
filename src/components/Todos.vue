@@ -1,6 +1,6 @@
 <template>
   <transition-group name="fade" tag="ul" class="p-0">
-    <li class="main-todo" v-for="(todo, index) in this.propTodoArray" :key="todo.text_id">
+    <li class="main-todo" v-for="(todo, index) in this.userClass.todoList" :key="todo.text_id">
       <div
         class="main-todo_post_wrap"
         @mouseover="showTrashbox(index)"
@@ -31,16 +31,10 @@
 </template>
 
 <script>
+import { mapGetters, mapMutations } from 'vuex';
 export default {
-  props:["propTodoArray"],
   data() {
     return {
-      todosData: {
-        // inputToDo: "",
-        // todosArray: [],
-        // userTextId: 0,
-        // isUser: false,
-      },
       trashBox: {
         show: false,
         index: "",
@@ -48,21 +42,17 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(["userClass"]),
     db() {
       return this.$store.state.db;
     },
-    getTodosArray() {
-      return this.todosData.todosArray;
-    },
-    getUserData() {
-      return this.$store.state.userInfo;
-    },
     queryGetUserDB() {
-      return this.db.collection("users").doc(this.getUserData.uid)
+      return this.db.collection("users").doc(this.userClass.userInfo.uid)
     }
   },
 
   methods: {
+    ...mapMutations(["setUserClass"]),
     showTrashbox(index) {
       this.trashBox.show = true;
       this.trashBox.index = index;
@@ -76,7 +66,7 @@ export default {
       ev.target.classList.toggle("todo_done");
       const getThis = await this.queryGetUserDB
         .collection("todo_list")
-        .where("text_id", "==", this.propTodoArray[index].text_id)
+        .where("text_id", "==", this.userClass.todoList[index].text_id)
         .get()
         .catch((err) => console.log("get error:", err));
       getThis.forEach((doc) => {
@@ -94,7 +84,7 @@ export default {
       this.trashBox.show = false;
       const deleteThing = await this.queryGetUserDB
         .collection("todo_list")
-        .where("text_id", "==", this.propTodoArray[index].text_id)
+        .where("text_id", "==", this.userClass.todoList[index].text_id)
         .get()
         .catch((err) => console.log("getのエラー:", err));
       deleteThing.forEach((text) => {
@@ -108,7 +98,7 @@ export default {
     },
 
     mounted() {
-      console.log(this.propTodoArray)
+      console.log(this.userClass.todoList)
     }
   }
 }

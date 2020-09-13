@@ -1,21 +1,23 @@
 <template>
 <v-app>
     <VueLoading v-show="isLoading"></VueLoading>
+  <!-- <keep-alive> -->
     <router-view v-show="!isLoading"></router-view>
+  <!-- </keep-alive> -->
 </v-app>
 </template>
 
 <script>
 import VueLoading from './views/VueLoading'
 import { mapGetters, mapMutations } from 'vuex'
-// import { mapGetters } from 'vuex'
+import { User } from './models/model'
 
 export default {
   components: {
     VueLoading
   },
   computed:{
-    ...mapGetters(["firebase", "isLoading", "userInfo", "test"]),
+    ...mapGetters(["firebase", "isLoading", "userInfo", "test", "userClass"]),
   },
   watch: {
     $route(to) {
@@ -23,13 +25,17 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(["setUserInfo", "setIsLoading"]),
+    ...mapMutations(["setUserInfo", "setIsLoading", "setUserClass"]),
     hasAuth() {
       this.firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-          this.setUserInfo(user)
+          // this.setUserInfo(user)
+          this.setUserClass(new User(user))
+          console.log(this.userClass)
         } else {
           this.setIsLoading(false)
+          this.setUserClass(null)
+          console.log(this.userClass)
         }
       });
     },
@@ -41,13 +47,14 @@ export default {
       }
     }
   },
+
   created() {
     this.hasAuth()
   },
   mounted() {
     let to = this.$route
     this.createPageTitle(to)
-    this.$store.commit("setIsLoading", false)
+    this.setIsLoading(false)
   }
 }
 </script>
