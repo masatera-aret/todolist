@@ -39,8 +39,9 @@
     position: absolute;
     top: 50%;
     left: 5px;
-    color: #999;
-    z-index: -1;
+    color: map-get($colors, "dark_gray");
+    pointer-events: none;
+    // z-index: -1;
     transform: translateY(-50%);
     transition: 0.5s;
   }
@@ -58,9 +59,12 @@
     top: -10px;
     color: #999;
   }
-  .out_focus + span::after {
+  .in_focus + span::after {
     width: 100%;
   }
+  // .out_focus + span::after {
+  //   width: 100%;
+  // }
   .out_focus + span::before {
     color: map-get($colors, "quiet_green");
     // color: black;

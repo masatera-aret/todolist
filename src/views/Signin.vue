@@ -21,7 +21,7 @@
             @blur="outFocus"
             type="password"
           />
-          <span data-placeholder="password"></span>
+          <span data-placeholder="Password"></span>
         </div>
         <button
           class="auth_send_btn"

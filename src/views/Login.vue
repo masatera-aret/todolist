@@ -3,13 +3,14 @@
     <main class="auth_container">
       <div class="auth_wrapper">
         <h2 class="text-center">Login</h2>
+        <div v-if="login_error">{{ comment }}</div>
         <div class="auth_inner">
           <input v-model="email" :class="emailStatus" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
         </div>
         <div class="auth_inner">
           <input v-model="password" :class="passwordStatus" @focus="inFocus" @blur="outFocus" type="password" />
-          <span data-placeholder="password"></span>
+          <span data-placeholder="Password"></span>
         </div>
         <button class="auth_send_btn" :tabindex="tabindex" :class="inputRuleJudging" @click="toLogin">login</button>
         <!-- <button @click="toLoginByGoogle">googleでログインだ！</button> -->
@@ -25,10 +26,16 @@
 
 <script>
 import { mapGetters, mapMutations } from 'vuex';
-import {LoginSigninMixin} from './LoginSigninMIxin';
+import { LoginSigninMixin } from './LoginSigninMIxin';
 
 export default {
-  mixins:[LoginSigninMixin],
+  mixins:[ LoginSigninMixin ],
+  data() {
+    return {
+      comment: "ログイン失敗",
+      login_error: false
+    }
+  },
 
   computed: {
     ...mapGetters(["providerGoogle"]),
@@ -40,17 +47,19 @@ export default {
       this.firebase.auth().onAuthStateChanged((user) => {
         if (user) {
           this.setUserInfo(user)
-          this.email = ""
-          this.password = ""
+          // this.email = ""
+          // this.password = ""
         } else {
           this.setIsLoading(false)
         }
       });
     },
     async toLogin() {
+      this.login_error = false
       this.setIsLoading(true)
       await this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
       .catch((err) => {
+        this.login_error = true
         console.log("ログインエラー", err)
       })
       this.hasAuth()
@@ -59,6 +68,7 @@ export default {
       const user = await this.firebase.auth().currentUser
       const testData = await this.db.collection("users").doc(user.uid).get()
       if(!testData.data()) {
+        // this.setIsLoading(true)
         this.db.collection("users").doc(user.uid).set({
           text_id: 0,
           uid: user.uid,
@@ -68,10 +78,16 @@ export default {
       }
     },
     async toLoginByGoogle() {
-      await this.firebase.auth().signInWithPopup(this.providerGoogle)
-      .catch(err => console.log("googleログインでエラー:",err))
-      this.setIsLoading(true)
-      this.setAuthDataWithGoogle()
+      try {
+        await this.firebase.auth().signInWithPopup(this.providerGoogle)
+        .catch(err => {
+          throw new Error(err)
+        })
+        this.setAuthDataWithGoogle()
+      }
+      catch {
+        return
+      }
     }
   },
   created() {
@@ -79,7 +95,7 @@ export default {
     this.password = "terakado"
   },
   mounted() {
-    this.setIsLoading(false);
+    // this.setIsLoading(false);
   },
 }
 </script>
