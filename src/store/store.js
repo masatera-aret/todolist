@@ -16,6 +16,7 @@ firebase.initializeApp(firebaseConfig)
 export default new Vuex.Store({
   state: {
     userInfo: null,
+    userClass: null,  //User Classのインスタンスが入る
     isLoading: true,  //Modalの表示
     firebase: firebase,
     db: firebase.firestore(),
@@ -28,11 +29,15 @@ export default new Vuex.Store({
     providerGoogle: state => state.providerGoogle,
     isLoading: state => state.isLoading,
     userInfo: state => state.userInfo,
+    userClass: state => state.userClass,
     modalShow: state => state.modalShow
   },
   mutations: {
     setUserInfo(state, userInfo) {
       state.userInfo = userInfo
+    },
+    setUserClass(state, userClass) {
+      state.userClass = userClass
     },
     setIsLoading(state, bool) {
       state.isLoading = bool
