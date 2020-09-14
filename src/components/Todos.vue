@@ -1,5 +1,5 @@
 <template>
-  <transition-group name="fade" tag="ul" class="p-0">
+  <transition-group v-if="userClass" name="fade" tag="ul" class="p-0">
     <li class="main-todo" v-for="(todo, index) in this.userClass.todoList" :key="todo.text_id">
       <div
         class="main-todo_post_wrap"
@@ -93,12 +93,7 @@ export default {
           .doc(text.id)
           .delete()
           .catch((err) => console.log("削除のエラー:", err));
-        console.log("削除しました");
       });
-    },
-
-    mounted() {
-      console.log(this.userClass.todoList)
     }
   }
 }

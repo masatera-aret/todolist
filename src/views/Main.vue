@@ -3,7 +3,7 @@
     <header class="header_container">
       <div class="header_wrapper">
         <div class="todo_post">
-          <input v-model="inputToDo" type="text" placeholder="ToDoを入力してください" />
+          <input v-model="inputToDo" @keypress.enter="setToDo" type="text" placeholder="ToDoを入力してください" />
           <span></span>
           <button class="todo_post_add_btn" @click="setToDo">add</button>
         </div>
@@ -14,7 +14,7 @@
       </div>
     </header>
     <main class="main_container">
-      <Todos v-if="userClass" />
+      <Todos />
     </main>
     <!-- 入力をチェックしてモーダルを表示 -->
     <v-row justify="center">
@@ -37,10 +37,6 @@ export default {
   },
   data() {
     return {
-      bModal: {
-        okOnly: true,
-        hideHeader: true,
-      },
       modalShow: false,
       modalComment: "modal comment",
       trashBox: {
@@ -64,10 +60,9 @@ export default {
       this.modalShow = false;
     },
 
-    async getuserTextId() {
+    async getUserTextID() {
       const user = await this.queryGetUserDB.get()
       this.userClass.userPostNumber.setter = user.data().text_id;
-      // console.log(this.userClass.userPostNumber.getter)
     },
 
     async updateIncrementID() {
@@ -84,12 +79,6 @@ export default {
         .get();
       return getIDRef.data().textID;
     },
-
-    // async getThisUserTextId() {
-    //   const user = await this.queryGetUserDB
-    //     .get();
-    //   return user.data().text_id;
-    // },
 
     async incrementTextId() {
       const user = await this.db.collection("users").doc(this.userClass.userInfo.uid);
@@ -173,16 +162,32 @@ export default {
           );
         }, this.onlyReturnFunc);
     },
+    async setNewAuthDBData() {
+      const user = await this.firebase.auth().currentUser
+      const userID = await this.db.collection("users").doc(user.uid).get()
+      if(!userID.data()) {
+        // this.setIsLoading(true)
+        this.db.collection("users").doc(user.uid).set({
+          text_id: 0,
+          uid: user.uid,
+          email: user.email,
+          created_at: this.firebase.firestore.FieldValue.serverTimestamp()
+        })
+      }
+    },
+
     async renderToDoList() {
-      await this.getToDoListSnapshot();
-      this.getuserTextId();
+      await this.setNewAuthDBData();
+      this.getToDoListSnapshot();
+      this.getUserTextID();
     }
   },
   created() {
-    this.renderToDoList().catch((err) => console.log(err));
-  },
+    this.renderToDoList()
+    // .catch((err) => console.log(err));
+    },
   mounted() {
-    this.setIsLoading(false);
+    this.setIsLoading(false)
   },
 };
 </script>

@@ -7,17 +7,17 @@ import 'firebase/app'
 
 Vue.use(VueRouter)
 
-  const routes = [
+const routes = [
   {
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: {title: "Login"},
+    meta: { title: "Login" },
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
-        if(user) {
-          next({name:"Main"})
-        }else {
+        if (user) {
+          next({ name: "Main" })
+        } else {
           next()
         }
       })
@@ -27,12 +27,12 @@ Vue.use(VueRouter)
     path: '/signin',
     name: 'Signin',
     component: Signin,
-    meta: {title: "Signin"},
+    meta: { title: "Signin" },
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
-        if(user) {
-          next({name:"Main"})
-        }else {
+        if (user) {
+          next({ name: "Main" })
+        } else {
           next()
         }
       })
@@ -41,16 +41,16 @@ Vue.use(VueRouter)
   {
     path: '/main',
     name: 'Main',
-    meta: {title: "My ToDoList"},
+    meta: { title: "My ToDoList" },
     // route level code-splitting
     // this generates a separate chunk (main.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "main" */ '../views/Main.vue'),
     beforeEnter(to, from, next) {
       firebase.auth().onAuthStateChanged(user => {
-        if(!user) {
-          next({name:"Login"})
-        }else {
+        if (!user) {
+          next({ name: "Login" })
+        } else {
           next()
         }
       })
@@ -59,7 +59,7 @@ Vue.use(VueRouter)
   {
     path: '/modal',
     name: 'Modal',
-    meta: {title: "Modal"},
+    meta: { title: "Modal" },
     // route level code-splitting
     // this generates a separate chunk (main.[hash].js) for this route
     // which is lazy-loaded when the route is visited.

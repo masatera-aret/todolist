@@ -3,6 +3,7 @@
     <main class="auth_container">
       <div class="auth_wrapper">
         <h2 class="text-center">Signin</h2>
+        <div v-show="isSigninError">{{ signinErrorMessage }}</div>
         <div class="auth_inner">
           <input
             v-model="email"
@@ -36,34 +37,36 @@
 </template>
 
 <script>
-import { mapMutations } from 'vuex'
-import { LoginSigninMixin } from './LoginSigninMIxin'
+import { mapMutations } from "vuex";
+import { LoginSigninMixin } from "./LoginSigninMIxin";
 
 export default {
-  mixins:[ LoginSigninMixin ],
+  mixins: [LoginSigninMixin],
+  data() {
+    return {
+      isSigninError: false,
+      signinErrorMessage: "すでに登録されているメールアドレスです"
+    }
+  },
   methods: {
     ...mapMutations(["setIsLoading"]),
-    async setAuthData() {
-      const user = await this.firebase.auth().currentUser
-      if(user) {
-        this.db.collection("users").doc(user.uid).set({
-          text_id: 0,
-          uid: user.uid,
-          email: user.email,
-          created_at: this.firebase.firestore.FieldValue.serverTimestamp()
-        })
-      }
-    },
 
     async toSignin() {
-      this.setIsLoading(true);
-      await this.firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
-        .catch((err) => console.log("SignIn firebase Error:", err))
-      this.setAuthData()
-      this.email = "";
-      this.password = "";
-    }
-  }
+      try {
+        this.isSigninError = false;
+        this.setIsLoading(true);
+        await this.firebase
+          .auth()
+          .createUserWithEmailAndPassword(this.email, this.password)
+        this.email = "";
+        this.password = "";
+      }
+      catch {
+        this.isSigninError = true;
+        this.setIsLoading(false);
+      }
+    },
+  },
 };
 </script>
 
