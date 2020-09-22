@@ -1,5 +1,5 @@
 <template>
-  <transition-group v-if="userClass" name="fade" tag="ul" class="p-0">
+  <transition-group name="fade" tag="ul" class="p-0">
     <li class="main-todo" v-for="(todo, index) in this.userClass.todoList" :key="todo.text_id">
       <div
         class="main-todo_post_wrap"
@@ -46,7 +46,8 @@ export default {
     db() {
       return this.$store.state.db;
     },
-    queryGetUserDB() {
+    
+    queryToUsersDatabase() {
       return this.db.collection("users").doc(this.userClass.userInfo.uid)
     }
   },
@@ -64,13 +65,13 @@ export default {
 
     async doneIt(index, ev) {
       ev.target.classList.toggle("todo_done");
-      const getThis = await this.queryGetUserDB
+      const getThis = await this.queryToUsersDatabase
         .collection("todo_list")
         .where("text_id", "==", this.userClass.todoList[index].text_id)
         .get()
         .catch((err) => console.log("get error:", err));
       getThis.forEach((doc) => {
-        this.queryGetUserDB
+        this.queryToUsersDatabase
           .collection("todo_list")
           .doc(doc.id)
           .update({
@@ -82,18 +83,25 @@ export default {
 
     async deleteTodo(index) {
       this.trashBox.show = false;
-      const deleteThing = await this.queryGetUserDB
-        .collection("todo_list")
-        .where("text_id", "==", this.userClass.todoList[index].text_id)
-        .get()
-        .catch((err) => console.log("getのエラー:", err));
-      deleteThing.forEach((text) => {
-        this.queryGetUserDB
+      try {
+        const deleteThing = await this.queryToUsersDatabase
           .collection("todo_list")
-          .doc(text.id)
-          .delete()
-          .catch((err) => console.log("削除のエラー:", err));
-      });
+          .where("text_id", "==", this.userClass.todoList[index].text_id)
+          .get()
+        deleteThing.forEach((doc) => {
+          this.queryToUsersDatabase
+            .collection("todo_list")
+            .doc(doc.id)
+            .delete()
+        })
+      }
+      catch(err) {
+        console.log(err)
+      }
+    },
+
+    mounted() {
+      console.log(this.userClass.todoList)
     }
   }
 }
@@ -101,6 +109,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "../assets/scss/_variables";
+
 .main-todo {
   width: 600px;
   padding-top: 10px;
@@ -118,6 +127,7 @@ export default {
       bottom: 0;
       width: 100%;
       height: 1px;
+      pointer-events: none;
       background-color: map-get($colors, "light_gray");
       opacity: 0;
     }

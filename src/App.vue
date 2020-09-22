@@ -57,6 +57,17 @@ export default {
 </script>
 
 <style lang="scss">
+@import "./assets/scss/_variables";
+$base-font-size: clamp(16px, 1.5vw, 32px);
+// * {
+//   outline: 1px solid black;
+//   background-color: rgba(0, 217, 255, 0.111);
+// }
+
+div {
+  font-size: map-get($font-size, "base");
+}
+
 #app {
   min-height: 100vh;
   font-family: Avenir, Helvetica, Arial, sans-serif;

@@ -3,7 +3,7 @@
     <main class="auth_container">
       <div class="auth_wrapper">
         <h2 class="text-center">Login</h2>
-        <div v-if="loginError" class="login-failed">{{ loginFailedMessage }}</div>
+        <div v-if="login_error" class="login_error_message">{{ comment }}</div>
         <div class="auth_inner">
           <input v-model="email" :class="emailStatus" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
@@ -32,8 +32,8 @@ export default {
   mixins:[ LoginSigninMixin ],
   data() {
     return {
-      loginFailedMessage: "Login Failed",
-      loginError: false
+      comment: "※EmailかPasswordに誤りがあります",
+      login_error: false
     }
   },
 
@@ -55,16 +55,31 @@ export default {
       });
     },
     async toLogin() {
-      this.loginError = false
-      // console.log("toLogin")
+      this.login_error = false
       this.setIsLoading(true)
       await this.firebase.auth().signInWithEmailAndPassword(this.email, this.password)
       .catch((err) => {
-        this.loginError = true
-        this.loginFailedMessage = "※EmailかPasswordに誤りがあります"
+        this.login_error = true
         console.log("ログインエラー", err)
       })
       this.hasAuth()
+    },
+    async setAuthDataWithGoogle() {
+      const user = await this.firebase.auth().currentUser
+      const testData = await this.db.collection("users").doc(user.uid).get()
+      if(!testData.data()) {
+        // this.setIsLoading(true)
+        this.db.collection("users").doc(user.uid).set({
+          text_id: 0,
+          uid: user.uid,
+          email: user.email,
+          created_at: this.firebase.firestore.FieldValue.serverTimestamp()
+        })
+        // this.setAuthDataWithGoogle()
+      }
+      catch {
+        return
+      }
     },
     async toLoginByGoogle() {
       try {
@@ -72,7 +87,7 @@ export default {
         .catch(err => {
           throw new Error(err)
         })
-        // this.setAuthDataWithGoogle()
+        this.setAuthDataWithGoogle()
       }
       catch {
         return
@@ -83,13 +98,17 @@ export default {
     this.email = "terakado@terakado.jp"
     this.password = "terakado"
   },
+  mounted() {
+    // this.setIsLoading(false);
+  },
 }
 </script>
 
 <style lang="scss" scoped>
 @import '../assets/scss/account_auth';
 
-.login-failed {
+
+.login_error_message {
   color:red;
 }
 
