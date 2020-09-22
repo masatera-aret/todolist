@@ -4,3 +4,8 @@ $colors: (
   light_gray:#adadad,
   dark_gray:#494949
 );
+
+
+$font-size: (
+  base: clamp(16px, 1.5vw, 25px)
+)
