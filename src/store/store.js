@@ -16,7 +16,7 @@ firebase.initializeApp(firebaseConfig)
 export default new Vuex.Store({
   state: {
     userInfo: null,
-    userClass: null,  //User Classのインスタンスが入る
+    userClass: null,
     isLoading: true,  //Modalの表示
     firebase: firebase,
     db: firebase.firestore(),
