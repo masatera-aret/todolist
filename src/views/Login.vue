@@ -3,7 +3,7 @@
     <main class="auth_container">
       <div class="auth_wrapper">
         <h2 class="text-center">Login</h2>
-        <div v-if="login_error">{{ comment }}</div>
+        <div v-if="login_error" class="login_error_message">{{ comment }}</div>
         <div class="auth_inner">
           <input v-model="email" :class="emailStatus" @focus="inFocus" @blur="outFocus" type="email" />
           <span data-placeholder="Email"></span>
@@ -32,7 +32,7 @@ export default {
   mixins:[ LoginSigninMixin ],
   data() {
     return {
-      comment: "ログイン失敗",
+      comment: "※EmailかPasswordに誤りがあります",
       login_error: false
     }
   },
@@ -102,5 +102,9 @@ export default {
 
 <style lang="scss" scoped>
 @import '../assets/scss/account_auth';
+
+.login_error_message {
+  color:red;
+}
 
 </style>
