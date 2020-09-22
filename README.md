@@ -1,10 +1,7 @@
 # todolist_by_vuejs
-
-## Project setup
 ```
-npm install
+## Vue.jsを使ってToDoListを作った
 ```
-
 ### Compiles and hot-reloads for development
 ```
 npm run serve

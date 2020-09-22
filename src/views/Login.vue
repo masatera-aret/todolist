@@ -75,6 +75,10 @@ export default {
           email: user.email,
           created_at: this.firebase.firestore.FieldValue.serverTimestamp()
         })
+        // this.setAuthDataWithGoogle()
+      }
+      catch {
+        return
       }
     },
     async toLoginByGoogle() {
@@ -102,6 +106,7 @@ export default {
 
 <style lang="scss" scoped>
 @import '../assets/scss/account_auth';
+
 
 .login_error_message {
   color:red;
