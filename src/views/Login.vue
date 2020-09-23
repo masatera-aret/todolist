@@ -77,10 +77,8 @@ export default {
         })
         // this.setAuthDataWithGoogle()
       }
-      catch {
-        return
-      }
     },
+
     async toLoginByGoogle() {
       try {
         await this.firebase.auth().signInWithPopup(this.providerGoogle)
