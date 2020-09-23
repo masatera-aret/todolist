@@ -29,13 +29,10 @@ export default {
     hasAuth() {
       this.firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-          // this.setUserInfo(user)
           this.setUserClass(new User(user))
-          // console.log(this.userClass)
         } else {
           this.setIsLoading(false)
           this.setUserClass(null)
-          // console.log(this.userClass)
         }
       });
     },

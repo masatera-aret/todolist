@@ -105,6 +105,7 @@ export default {
 <style lang="scss" scoped>
 @import '../assets/scss/account_auth';
 
+
 .login_error_message {
   color:red;
 }

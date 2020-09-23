@@ -30,7 +30,6 @@ export default {
   data() {
     return {
       inputToDo: "",
-
       modal: {
         show: false,
         comment: "modal comment"
