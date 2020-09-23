@@ -46,6 +46,7 @@ export default {
     db() {
       return this.$store.state.db;
     },
+
     queryToUsersDatabase() {
       return this.db.collection("users").doc(this.userClass.userInfo.uid)
     }
