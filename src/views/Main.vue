@@ -1,7 +1,7 @@
 <template>
   <div class="global_container">
     <header class="header_container">
-      <Header @modalState="catchModalState" />
+      <Header @modal-state="modal = $event" />
     </header>
     <main class="main_container">
       <Todos v-if="userClass" />
@@ -9,7 +9,7 @@
     <!-- 入力をチェックしてモーダルを表示 -->
     <v-row v-show="modal.show" justify="center">
       <v-dialog v-model="modal.show" max-width="450">
-        <Modal :modal-comment="modal.comment" @closeModal="modal.show = false" />
+        <Modal :modal-comment="modal.comment" @close-modal="modal.show = false" />
       </v-dialog>
     </v-row>
   </div>
@@ -44,12 +44,7 @@ export default {
   },
 
   methods: {
-    ...mapMutations(["setUserInfo", "setIsLoading", "setUserClass"]),
-
-    //Header.vueからmodalの状態を受け取る
-    catchModalState(modalState) {
-      this.modal = modalState
-    },
+    ...mapMutations(["setIsLoading"]),
 
     async getuserTextId() {
       const user = await this.queryGetUserDB.get()

@@ -39,7 +39,7 @@
     position: absolute;
     top: 50%;
     left: 5px;
-    color: map-get($colors, "dark_gray");
+    color: map-get($colors, "light_gray");
     pointer-events: none;
     // z-index: -1;
     transform: translateY(-50%);
@@ -52,12 +52,12 @@
     left:0;
     width:0%;
     height:1px;
-    background-color: map-get($colors, "quiet_green");
+    background-color: map-get($colors, "dark_gray");
     transition: 0.5s;
   }
   .in_focus + span::before {
     top: -10px;
-    color: #999;
+    color: map-get($colors, "dark_gray");
   }
   .in_focus + span::after {
     width: 100%;
@@ -67,7 +67,6 @@
   // }
   .out_focus + span::before {
     color: map-get($colors, "quiet_green");
-    // color: black;
   }
 }
 

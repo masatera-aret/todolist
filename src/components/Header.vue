@@ -38,7 +38,7 @@ export default {
   methods: {
 
     modalState() {
-      this.$emit("modalState", this.modal)
+      this.$emit("modal-state", this.modal)
     },
 
     async setToDo(ev) {
