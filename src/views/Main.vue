@@ -1,7 +1,7 @@
 <template>
   <div class="global_container">
     <header class="header_container">
-      <Header @modalState="catchModalState" />
+      <Header @modal-state="modal = $event" />
     </header>
     <main class="main_container">
       <Todos v-if="userClass" />
@@ -9,7 +9,7 @@
     <!-- 入力をチェックしてモーダルを表示 -->
     <v-row v-show="modal.show" justify="center">
       <v-dialog v-model="modal.show" max-width="450">
-        <Modal :modal-comment="modal.comment" @closeModal="modal.show = false" />
+        <Modal :modal-comment="modal.comment" @close-modal="modal.show = false" />
       </v-dialog>
     </v-row>
   </div>
@@ -44,12 +44,7 @@ export default {
   },
 
   methods: {
-    ...mapMutations(["setUserInfo", "setIsLoading", "setUserClass"]),
-
-    //Header.vueからmodalの状態を受け取る
-    catchModalState(modalState) {
-      this.modal = modalState
-    },
+    ...mapMutations(["setIsLoading"]),
 
     async getuserTextId() {
       const user = await this.queryGetUserDB.get()
@@ -79,7 +74,9 @@ export default {
       });
     },
 
-    //読み込み時に実行される関数内で実行するモジュール関数
+    // 読み込み時に実行される.onSnapshotの中で使うモジュール関数郡
+    //.onSnapshotの中で使う関数
+    //取得したsnapshotのsourceがServerかLocalかで追加されたデータかどうかを判断している。
     checkingSource(snapshot, caseLocalCallback, caseServerCallback = this.onlyReturnFunc) {
       const source = snapshot.metadata.hasPendingWrites ? "Local" : "Server";
       if (source == "Local") {
@@ -89,10 +86,12 @@ export default {
       }
     },
 
+    //.onSnapshotの中で使う関数
+    //新しく追加されたデータ(soruceがLocal)をToTodosArray配列の先頭に追加
     newTodoAddToTodosArray(snapshot) {
       snapshot.forEach((doc) => {
         this.checkingSource(doc, (doc) => {
-          let hasData = this.userClass.todoList.some((el) => el.id == doc.data().id);
+          let hasData = this.userClass.todoList.includes(doc.data().id);
           if (!hasData) {
             this.userClass.unshiftTodolist(doc.data());
           }
@@ -100,6 +99,8 @@ export default {
       });
     },
 
+    //.onSnapshotの中で使う関数
+    //firesoreから取得したデータ(sourceがServer)をToTodosArray配列に追加
     resourceDataPushToTodosArray(snapshot) {
       //TodoListを毎回初期化
       this.userClass.modelsTodoList = [];
@@ -111,7 +112,8 @@ export default {
     onlyReturnFunc() {
       return;
     },
-    //読み込み時に実行される関数
+    //ページ読み込み時に実行
+    //snapshotをとって監視して、データが追加されたら変更を反映
     async getToDoListSnapshot() {
       await this.queryGetUserDB
         .collection("todo_list")
@@ -121,7 +123,7 @@ export default {
             snapshot,
             this.newTodoAddToTodosArray(snapshot),
             this.resourceDataPushToTodosArray(snapshot)
-          );
+          )
         }, this.onlyReturnFunc);
     },
 

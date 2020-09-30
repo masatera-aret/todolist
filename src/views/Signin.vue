@@ -27,7 +27,7 @@
         <button
           class="auth_send_btn"
           :tabindex="tabindex"
-          :class="inputRuleJudging"
+          :class="hasPassTheInputRule"
           @click="toSignin"
         >signin</button>
       </div>
