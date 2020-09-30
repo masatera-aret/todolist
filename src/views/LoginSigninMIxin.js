@@ -3,8 +3,8 @@ export const LoginSigninMixin = {
     return {
       email: "",
       password: "",
-      emailStatus: { in_focus: false, out_focus: false },
-      passwordStatus: { in_focus: false, out_focus: false },
+      emailStatus: { not_empty: false, pass_verify: false },
+      passwordStatus: { not_empty: false, pass_verify: false },
       emailRegexp:/^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]{1,}\.[A-Za-z0-9]{1,}$/,
     }
   },
@@ -15,7 +15,7 @@ export const LoginSigninMixin = {
     db() {
       return this.$store.state.db;
     },
-    inputRuleJudging() {
+    hasPassTheInputRule() {
       if(this.emailRegexp.test(this.email) && (this.password.length >= 6 && this.password.length < 20)) {
         return {btn_click_permission: true}
       }else {
@@ -28,37 +28,39 @@ export const LoginSigninMixin = {
       }else {
         return "-1"
       }
-    }
-  },
-  watch: {
-    email: function () {
-      if (this.emailRegexp.test(this.email)) {
-        this.emailStatus.in_focus = true
-        this.emailStatus.out_focus = true
-      } else {
-        this.emailStatus.in_focus = true
-        this.emailStatus.out_focus = false
-      }
     },
-    password: function () {
-      if (this.password.length >= 6 && this.password.length <= 20) {
-        this.passwordStatus.in_focus = true
-        this.passwordStatus.out_focus = true
+  },
+
+  watch: {
+    email: function() {
+      if(this.emailRegexp.test(this.email)) {
+        this.emailStatus.pass_verify = true
+        this.emailStatus.not_empty = true
       }else {
-        this.passwordStatus.in_focus = true
-        this.passwordStatus.out_focus = false
+        this.emailStatus.pass_verify = false
+        this.emailStatus.not_empty = true
+      }
+
+    },
+    password: function() {
+      if (this.password.length >= 6 && this.password.length <= 20) {
+        this.passwordStatus.pass_verify = true
+        this.passwordStatus.not_empty = true
+      }else {
+        this.passwordStatus.pass_verify = false
+        this.passwordStatus.not_empty = true
       }
     }
   },
   methods: {
     inFocus(ev) {
-      ev.target.classList.add("in_focus");
+      ev.target.classList.add("not_empty");
     },
 
     outFocus(ev) {
       const el = ev.target;
       if (el.value == "") {
-        el.classList.remove("in_focus");
+        el.classList.remove("not_empty");
       }
     }
   }

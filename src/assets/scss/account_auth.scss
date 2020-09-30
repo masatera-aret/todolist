@@ -55,18 +55,21 @@
     background-color: map-get($colors, "dark_gray");
     transition: 0.5s;
   }
-  .in_focus + span::before {
+
+  .not_empty + span::before {
     top: -10px;
     color: map-get($colors, "dark_gray");
   }
-  .in_focus + span::after {
+  .not_empty + span::after {
     width: 100%;
   }
-  // .out_focus + span::after {
-  //   width: 100%;
-  // }
-  .out_focus + span::before {
+
+  .pass_verify + span::before {
     color: map-get($colors, "quiet_green");
+  }
+
+  .pass_verify + span::after {
+    background-color: map-get($colors, "quiet_green");
   }
 }
 
